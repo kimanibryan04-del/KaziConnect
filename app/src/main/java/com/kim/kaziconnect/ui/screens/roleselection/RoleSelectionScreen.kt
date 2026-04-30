@@ -129,8 +129,8 @@ fun RoleSelectionScreen(navController: NavHostController) {
             Spacer(modifier = Modifier.height(30.dp))
 
             // CLIENT BUTTON (Primary Cobalt Blue)
-            Button(
-                onClick = { /* TODO: Navigate to Client Signup */ },
+            TextButton(
+                onClick = { navController.navigate("register") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(58.dp),
@@ -151,7 +151,7 @@ fun RoleSelectionScreen(navController: NavHostController) {
 
             // FUNDI BUTTON (Outlined Orange Accent)
             OutlinedButton(
-                onClick = { /* TODO: Navigate to Fundi Signup */ },
+                onClick = { navController.navigate("register") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(58.dp),

@@ -22,6 +22,7 @@ import androidx.core.view.WindowCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.kim.kaziconnect.R
+import com.kim.kaziconnect.navigation.ROUT_REGISTER
 import com.kim.kaziconnect.navigation.ROUT_ROLESELECTION
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -43,7 +44,7 @@ fun SplashScreen(navController: NavHostController) {
     coroutinescope.launch {
 
         delay(timeMillis = 2000)
-        navController.navigate(route = ROUT_ROLESELECTION)
+        navController.navigate(route = ROUT_REGISTER)
     }
 
     Column(

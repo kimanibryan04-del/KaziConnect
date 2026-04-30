@@ -13,7 +13,7 @@ import com.kim.kaziconnect.ui.screens.splash.SplashScreen
 fun AppNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    startDestination: String = ROUT_SPLASH
+    startDestination: String = ROUT_REGISTER
 ) {
 
     NavHost(
@@ -25,6 +25,12 @@ fun AppNavHost(
             SplashScreen(navController)
         }
         composable(ROUT_ROLESELECTION) {
+            RoleSelectionScreen(navController)
+        }
+        composable(ROUT_REGISTER) {
+            RoleSelectionScreen(navController)
+        }
+        composable(ROUT_LOGIN) {
             RoleSelectionScreen(navController)
         }
 
