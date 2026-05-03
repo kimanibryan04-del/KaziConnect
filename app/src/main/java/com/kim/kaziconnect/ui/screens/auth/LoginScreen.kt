@@ -33,6 +33,8 @@ import androidx.core.view.WindowCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.kim.kaziconnect.R
+import com.kim.kaziconnect.navigation.ROUT_CLIENTHOME
+import com.kim.kaziconnect.navigation.ROUT_ROLESELECTION
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -214,6 +216,7 @@ fun LoginScreen(navController: NavHostController) {
                 isLoading = true
                 errorMessage = null
                 // Trigger your Django login logic here
+                navController.navigate(route = ROUT_ROLESELECTION)
             },
             enabled = isLoginEnabled,
             modifier = Modifier

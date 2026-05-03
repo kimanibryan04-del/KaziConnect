@@ -1,4 +1,4 @@
-package com.kim.kaziconnect.ui.screens.roleselection
+package com.kim.kaziconnect.ui.screens.onboarding
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -28,7 +28,9 @@ import android.app.Activity
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-
+import com.kim.kaziconnect.navigation.ROUT_CLIENTHOME
+import com.kim.kaziconnect.navigation.ROUT_CLIENTPROFILE
+import com.kim.kaziconnect.navigation.ROUT_FUNDIHOME
 
 
 @Composable
@@ -130,7 +132,7 @@ fun RoleSelectionScreen(navController: NavHostController) {
 
             // CLIENT BUTTON (Primary Cobalt Blue)
             TextButton(
-                onClick = { navController.navigate("register") },
+                onClick = { navController.navigate(route = ROUT_CLIENTHOME) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(58.dp),
@@ -151,7 +153,7 @@ fun RoleSelectionScreen(navController: NavHostController) {
 
             // FUNDI BUTTON (Outlined Orange Accent)
             OutlinedButton(
-                onClick = { navController.navigate("register") },
+                onClick = { navController.navigate(route = ROUT_FUNDIHOME) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(58.dp),

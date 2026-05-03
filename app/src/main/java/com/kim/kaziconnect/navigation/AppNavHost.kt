@@ -6,14 +6,20 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.kim.kaziconnect.ui.screens.roleselection.RoleSelectionScreen
+import com.kim.kaziconnect.ui.screens.auth.login.LoginScreen
+import com.kim.kaziconnect.ui.screens.gig.ClientGigScreen
+import com.kim.kaziconnect.ui.screens.home.ClientHomeScreen
+import com.kim.kaziconnect.ui.screens.messages.ClientMessagesScreen
+import com.kim.kaziconnect.ui.screens.profile.ClientProfileScreen
+import com.kim.kaziconnect.ui.screens.register.RegisterScreen
+import com.kim.kaziconnect.ui.screens.onboarding.RoleSelectionScreen
 import com.kim.kaziconnect.ui.screens.splash.SplashScreen
 
 @Composable
 fun AppNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    startDestination: String = ROUT_REGISTER
+    startDestination: String = ROUT_SPLASH
 ) {
 
     NavHost(
@@ -28,10 +34,22 @@ fun AppNavHost(
             RoleSelectionScreen(navController)
         }
         composable(ROUT_REGISTER) {
-            RoleSelectionScreen(navController)
+            RegisterScreen(navController)
         }
         composable(ROUT_LOGIN) {
-            RoleSelectionScreen(navController)
+            LoginScreen(navController)
+        }
+        composable(ROUT_CLIENTHOME) {
+            ClientHomeScreen(navController)
+        }
+        composable(ROUT_CLIENTGIG) {
+            ClientGigScreen(navController)
+        }
+        composable(ROUT_CLIENTMESSAGES) {
+            ClientMessagesScreen(navController)
+        }
+        composable(ROUT_CLIENTPROFILE) {
+            ClientProfileScreen(navController)
         }
 
 

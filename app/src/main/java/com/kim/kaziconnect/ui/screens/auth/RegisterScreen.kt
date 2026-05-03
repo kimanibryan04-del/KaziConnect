@@ -35,6 +35,8 @@ import androidx.core.view.WindowCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.kim.kaziconnect.R
+import com.kim.kaziconnect.navigation.ROUT_CLIENTHOME
+import com.kim.kaziconnect.navigation.ROUT_ROLESELECTION
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -200,7 +202,9 @@ fun RegisterScreen(navController: NavHostController) {
 
         // 4. ACTION BUTTON (With Loading state)
         Button(
-            onClick = { isLoading = true /* Handle logic */ },
+            onClick = { isLoading = true
+                navController.navigate(route = ROUT_ROLESELECTION)
+                      },
             enabled = isRegisterEnabled,
             modifier = Modifier.fillMaxWidth().height(58.dp),
             shape = RoundedCornerShape(14.dp),
