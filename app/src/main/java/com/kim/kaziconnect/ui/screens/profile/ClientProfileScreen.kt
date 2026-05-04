@@ -34,7 +34,6 @@ fun ClientProfileScreen(navController: NavHostController) {
 
     Scaffold(
         topBar = {
-            // Top Section is White as seen in image_eec8e8.png
             CenterAlignedTopAppBar(
                 title = {
                     Text("Profile", fontWeight = FontWeight.Black, color = colorPrimary)
@@ -51,12 +50,9 @@ fun ClientProfileScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Outlined.Home, contentDescription = "Home") },
                     label = { Text("Home") },
                     selected = false,
-                    onClick = {  navController.navigate(route = ROUT_CLIENTHOME) },
+                    onClick = { navController.navigate(route = ROUT_CLIENTHOME) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
-                        selectedTextColor = colorAccent,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
                         indicatorColor = Color.Transparent
                     )
                 )
@@ -64,29 +60,23 @@ fun ClientProfileScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Filled.List, contentDescription = "Gigs") },
                     label = { Text("Gigs") },
                     selected = false,
-                    onClick = {  navController.navigate(route = ROUT_CLIENTGIG) },
+                    onClick = { navController.navigate(route = ROUT_CLIENTGIG) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
-                        selectedTextColor = colorAccent,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
                         indicatorColor = Color.Transparent
                     )
                 )
                 NavigationBarItem(
-                    icon = { Icon(Icons.Outlined.Person, contentDescription = "Profile") },
+                    icon = { Icon(Icons.Filled.Person, contentDescription = "Profile") },
                     label = { Text("Profile") },
                     selected = true,
-                    onClick = { navController.navigate(route = ROUT_CLIENTPROFILE) },
+                    onClick = { /* Stay on current screen */ },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
                         indicatorColor = Color.Transparent
                     )
                 )
-
                 NavigationBarItem(
                     icon = { Icon(Icons.Outlined.Email, contentDescription = "Messages") },
                     label = { Text("Messages") },
@@ -94,16 +84,12 @@ fun ClientProfileScreen(navController: NavHostController) {
                     onClick = { navController.navigate(route = ROUT_CLIENTMESSAGES) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
-                        selectedTextColor = colorAccent,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
                         indicatorColor = Color.Transparent
                     )
                 )
             }
         }
     ) { paddingValues ->
-        // The Body uses the lightBg color to match image_eec8e8.png
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -117,7 +103,7 @@ fun ClientProfileScreen(navController: NavHostController) {
                 Surface(
                     modifier = Modifier.size(120.dp),
                     shape = CircleShape,
-                    color = Color(0xFFDDE2E9) // Matching the circle in image_eec8e8.png
+                    color = Color(0xFFDDE2E9)
                 ) {
                     Icon(
                         Icons.Default.Person,
@@ -129,25 +115,78 @@ fun ClientProfileScreen(navController: NavHostController) {
                 Spacer(Modifier.height(16.dp))
                 Text("Bryan", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = colorPrimary)
                 Text("Nairobi, Kenya", color = Color.Gray, fontSize = 14.sp)
+
                 Spacer(Modifier.height(32.dp))
+
+                // Stats Row: Rating and Jobs Requested (Opposite of Fundi "Jobs Done")
+                Row(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    ProfileMetricCard("Rating", "4.9", Icons.Default.Star, Color(0xFFFFD700), Modifier.weight(1f))
+                    ProfileMetricCard("Jobs Requested", "8", Icons.Default.History, colorAccent, Modifier.weight(1f))
+                }
+
+                Spacer(Modifier.height(24.dp))
             }
 
-            // Menu Groups
             item {
+                // Account Settings (Saved Locations Removed)
                 ProfileGroup(title = "Account Settings") {
                     ProfileItem("Personal Information", Icons.Outlined.Badge)
-                    ProfileItem("Saved Locations", Icons.Outlined.LocationOn)
                     ProfileItem("Payment Methods", Icons.Outlined.Payments)
                 }
+
                 ProfileGroup(title = "Preferences") {
                     ProfileItem("Notifications", Icons.Outlined.Notifications)
                     ProfileItem("App Theme", Icons.Outlined.DarkMode)
                 }
+
                 ProfileGroup(title = "Support") {
                     ProfileItem("Help Center", Icons.Outlined.HelpOutline)
                 }
-                Spacer(Modifier.height(20.dp))
+
+                // Logout Item as a single card
+                Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+                    ProfileItem("Logout", Icons.Outlined.Logout, iconColor = Color.Red)
+                }
+
+                Spacer(Modifier.height(40.dp))
             }
+        }
+    }
+}
+
+// --- HELPER COMPONENTS (DEFINED OUTSIDE MAIN FUNCTION) ---
+
+
+// Define this outside your function
+data class MetricData(
+    val label: String,
+    val value: String,
+    val icon: ImageVector,
+    val color: Color
+)
+
+@Composable
+fun ProfileMetricCard(
+    data: MetricData,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(0.5.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(data.icon, null, tint = data.color, modifier = Modifier.size(24.dp))
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(data.value, fontWeight = FontWeight.Black, fontSize = 18.sp)
+            Text(data.label, fontSize = 12.sp, color = Color.Gray)
         }
     }
 }
@@ -168,7 +207,7 @@ fun ProfileGroup(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-fun ProfileItem(text: String, icon: ImageVector) {
+fun ProfileItem(text: String, icon: ImageVector, iconColor: Color = Color(0xFF1B263B)) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -180,9 +219,14 @@ fun ProfileItem(text: String, icon: ImageVector) {
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, null, tint = Color(0xFF1B263B), modifier = Modifier.size(22.dp))
+            Icon(icon, null, tint = iconColor, modifier = Modifier.size(22.dp))
             Spacer(Modifier.width(16.dp))
-            Text(text, fontSize = 16.sp, modifier = Modifier.weight(1f), color = Color(0xFF1B263B))
+            Text(
+                text = text,
+                fontSize = 16.sp,
+                modifier = Modifier.weight(1f),
+                color = if (iconColor == Color.Red) Color.Red else Color(0xFF1B263B)
+            )
             Icon(Icons.Default.ChevronRight, null, tint = Color.LightGray)
         }
     }
