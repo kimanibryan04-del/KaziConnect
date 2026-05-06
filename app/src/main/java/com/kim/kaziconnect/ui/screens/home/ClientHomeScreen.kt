@@ -29,6 +29,7 @@ import com.kim.kaziconnect.navigation.ROUT_CLIENTGIG
 import com.kim.kaziconnect.navigation.ROUT_CLIENTHOME
 import com.kim.kaziconnect.navigation.ROUT_CLIENTMESSAGES
 import com.kim.kaziconnect.navigation.ROUT_CLIENTPROFILE
+import com.kim.kaziconnect.navigation.ROUT_REGISTER
 import com.kim.kaziconnect.navigation.ROUT_ROLESELECTION
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -117,6 +118,17 @@ fun ClientHomeScreen(navController: NavHostController) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                IconButton(
+                    onClick = {navController.navigate(route = ROUT_REGISTER) }, // Replace "register" with your actual ROUT_REGISTER constant
+                    modifier = Modifier.background(Color.White, CircleShape).size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Back to Register",
+                        tint = colorPrimary
+                    )
+                }
+
                 Column {
                     Text(
                         "Find Help Nearby",

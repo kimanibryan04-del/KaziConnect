@@ -1,6 +1,7 @@
-package com.kim.kaziconnect.ui.screens.auth.login
+package com.kim.kaziconnect.ui.screens.login
 
 import android.app.Activity
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,16 +34,23 @@ import androidx.core.view.WindowCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.kim.kaziconnect.R
-import com.kim.kaziconnect.navigation.ROUT_CLIENTHOME
 import com.kim.kaziconnect.navigation.ROUT_ROLESELECTION
+import com.google.firebase.auth.FirebaseAuth   // ✅ ADDED
+import com.google.firebase.database.FirebaseDatabase
+import com.kim.kaziconnect.navigation.ROUT_CLIENTHOME
+import com.kim.kaziconnect.navigation.ROUT_FUNDIHOME
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(navController: NavHostController) {
     val view = LocalView.current
+    val context = LocalView.current.context
     val focusManager = LocalFocusManager.current
 
-    // Set Status Bar icons to dark for the light background
+    // Firebase Auth instance
+    val auth = FirebaseAuth.getInstance()   // ✅ ADDED
+
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
@@ -50,19 +58,16 @@ fun LoginScreen(navController: NavHostController) {
         }
     }
 
-    // Concept 2 Color Palette
-    val colorPrimary = Color(0xFF3D5A80) // Cobalt Blue
-    val colorAccent = Color(0xFFEE6C4D)  // Vibrant Orange
-    val topGradientColor = Color(0xFFF0F7FF) // Soft Blue tint
+    val colorPrimary = Color(0xFF3D5A80)
+    val colorAccent = Color(0xFFEE6C4D)
+    val topGradientColor = Color(0xFFF0F7FF)
 
-    // State Management
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Validation Logic
     val isLoginEnabled = email.isNotBlank() && password.isNotBlank() && !isLoading
 
     Column(
@@ -78,7 +83,6 @@ fun LoginScreen(navController: NavHostController) {
     ) {
         Spacer(modifier = Modifier.fillMaxHeight(0.10f))
 
-        // 1. BRANDING: Circular Logo with Orange Border
         Box(
             modifier = Modifier
                 .size(160.dp)
@@ -99,7 +103,6 @@ fun LoginScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 2. TEXT HEADERS
         Text(
             text = "Welcome Back",
             fontSize = 28.sp,
@@ -116,7 +119,6 @@ fun LoginScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(30.dp))
 
-        // 3. ERROR FEEDBACK
         if (errorMessage != null) {
             Text(
                 text = errorMessage!!,
@@ -128,7 +130,6 @@ fun LoginScreen(navController: NavHostController) {
             )
         }
 
-        // 4. INPUT FIELDS
         OutlinedTextField(
             value = email,
             onValueChange = {
@@ -155,7 +156,6 @@ fun LoginScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        // PASSWORD FIELD - Simplified to remove 'Icons' dependency error
         OutlinedTextField(
             value = password,
             onValueChange = {
@@ -167,7 +167,6 @@ fun LoginScreen(navController: NavHostController) {
             shape = RoundedCornerShape(14.dp),
             isError = errorMessage != null,
             singleLine = true,
-            // Keep the masking logic even without the icon
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
@@ -177,7 +176,6 @@ fun LoginScreen(navController: NavHostController) {
                 onDone = { focusManager.clearFocus() }
             ),
             trailingIcon = {
-                // We use a simple Text button instead of the 'Icons' library
                 TextButton(onClick = { passwordVisible = !passwordVisible }) {
                     Text(
                         text = if (passwordVisible) "HIDE" else "SHOW",
@@ -193,30 +191,60 @@ fun LoginScreen(navController: NavHostController) {
             )
         )
 
-        // Forgot Password (UI-only placeholder)
         TextButton(
-            onClick = { /* Non-functional for MVP */ },
+            onClick = { },
             modifier = Modifier.align(Alignment.End),
             contentPadding = PaddingValues(0.dp)
         ) {
             Text(
                 text = "Forgot Password?",
                 color = colorPrimary.copy(alpha = 0.7f),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = FontFamily.SansSerif
+                fontSize = 13.sp
             )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 5. ACTION BUTTON WITH LOADING STATE
         Button(
             onClick = {
                 isLoading = true
                 errorMessage = null
-                // Trigger your Django login logic here
-                navController.navigate(route = ROUT_ROLESELECTION)
+
+                auth.signInWithEmailAndPassword(email.trim(), password.trim())
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+
+                            val userId = auth.currentUser?.uid
+                            val database = FirebaseDatabase.getInstance().reference
+
+                            if (userId != null) {
+                                database.child("users").child(userId).get()
+                                    .addOnSuccessListener { snapshot ->
+                                        isLoading = false
+
+                                        Toast.makeText(context, "Login successfull", Toast.LENGTH_SHORT).show()
+
+                                        val role = snapshot.child("role").value?.toString()
+
+                                        if (role == "client") {
+                                            navController.navigate(ROUT_CLIENTHOME)
+                                        } else if (role == "fundi") {
+                                            navController.navigate(ROUT_FUNDIHOME)
+                                        } else {
+                                            navController.navigate("$ROUT_ROLESELECTION/")
+                                        }
+                                    }
+                                    .addOnFailureListener {
+                                        isLoading = false
+                                        errorMessage = "Failed to fetch user data"
+                                    }
+                            }
+
+                        } else {
+                            isLoading = false
+                            errorMessage = task.exception?.message ?: "Login failed"
+                        }
+                    }
             },
             enabled = isLoginEnabled,
             modifier = Modifier
@@ -226,8 +254,7 @@ fun LoginScreen(navController: NavHostController) {
             colors = ButtonDefaults.buttonColors(
                 containerColor = colorPrimary,
                 disabledContainerColor = colorPrimary.copy(alpha = 0.5f)
-            ),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+            )
         ) {
             if (isLoading) {
                 CircularProgressIndicator(
@@ -236,39 +263,17 @@ fun LoginScreen(navController: NavHostController) {
                     strokeWidth = 2.dp
                 )
             } else {
-                Text(
-                    "LOG IN",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    letterSpacing = 1.sp,
-                    fontFamily = FontFamily.SansSerif
-                )
+                Text("LOG IN")
             }
         }
 
-        // 6. REGISTRATION LINK
         Row(
             modifier = Modifier.padding(vertical = 20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "New to KaziConnect? ",
-                color = Color.Gray,
-                fontSize = 15.sp,
-                fontFamily = FontFamily.SansSerif
-            )
-            TextButton(
-                onClick = { navController.navigate("register") },
-                contentPadding = PaddingValues(0.dp),
-                modifier = Modifier.height(IntrinsicSize.Min)
-            ) {
-                Text(
-                    text = "Sign Up",
-                    color = colorAccent,
-                    fontWeight = FontWeight.Black,
-                    fontSize = 15.sp,
-                    fontFamily = FontFamily.SansSerif
-                )
+            Text("New to KaziConnect? ")
+            TextButton(onClick = { navController.navigate("register") }) {
+                Text("Sign Up", color = colorAccent)
             }
         }
 
@@ -278,8 +283,7 @@ fun LoginScreen(navController: NavHostController) {
             text = "Empowering Skilled Labor in Nairobi",
             fontSize = 12.sp,
             color = Color.Gray.copy(alpha = 0.6f),
-            modifier = Modifier.padding(bottom = 24.dp),
-            fontFamily = FontFamily.SansSerif
+            modifier = Modifier.padding(bottom = 24.dp)
         )
     }
 }

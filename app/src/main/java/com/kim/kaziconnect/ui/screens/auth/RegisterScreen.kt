@@ -35,15 +35,20 @@ import androidx.core.view.WindowCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.kim.kaziconnect.R
-import com.kim.kaziconnect.navigation.ROUT_CLIENTHOME
 import com.kim.kaziconnect.navigation.ROUT_ROLESELECTION
+import com.google.firebase.auth.FirebaseAuth   // ✅ ADDED
+import android.widget.Toast
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(navController: NavHostController) {
     val view = LocalView.current
+    val context = LocalView.current.context
     val focusManager = LocalFocusManager.current
     val scrollState = rememberScrollState()
+
+    // Firebase Auth
+    val auth = FirebaseAuth.getInstance()   // ✅ ADDED
 
     if (!view.isInEditMode) {
         SideEffect {
@@ -52,20 +57,18 @@ fun RegisterScreen(navController: NavHostController) {
         }
     }
 
-    // Concept 2 Color Palette
-    val colorPrimary = Color(0xFF3D5A80) // Cobalt Blue
-    val colorAccent = Color(0xFFEE6C4D)  // Vibrant Orange
-    val topGradientColor = Color(0xFFF0F7FF) // Soft Blue tint
+    val colorPrimary = Color(0xFF3D5A80)
+    val colorAccent = Color(0xFFEE6C4D)
+    val topGradientColor = Color(0xFFF0F7FF)
 
-    // State Management
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }   // ✅ ADDED
 
-    // Validation Logic: SIGN UP only active if all fields valid and passwords match
     val passwordsMatch = password == confirmPassword && password.isNotEmpty()
     val isRegisterEnabled = fullName.isNotBlank() &&
             email.isNotBlank() &&
@@ -82,7 +85,6 @@ fun RegisterScreen(navController: NavHostController) {
     ) {
         Spacer(modifier = Modifier.fillMaxHeight(0.08f).height(60.dp))
 
-        // 1. BRANDING
         Box(
             modifier = Modifier
                 .size(120.dp)
@@ -101,7 +103,6 @@ fun RegisterScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // 2. TEXT HEADERS
         Text(
             text = "Create Account",
             fontSize = 28.sp,
@@ -118,7 +119,16 @@ fun RegisterScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(30.dp))
 
-        // 3. INPUT FIELDS
+        // ✅ ERROR MESSAGE
+        if (errorMessage != null) {
+            Text(
+                text = errorMessage!!,
+                color = Color.Red,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
+
         OutlinedTextField(
             value = fullName,
             onValueChange = { fullName = it },
@@ -147,7 +157,6 @@ fun RegisterScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(15.dp))
 
-        // Password Field
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -168,7 +177,6 @@ fun RegisterScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(15.dp))
 
-        // Confirm Password Field
         OutlinedTextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
@@ -176,7 +184,6 @@ fun RegisterScreen(navController: NavHostController) {
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             singleLine = true,
-            // UI Feedback: Red border if passwords mismatch
             isError = confirmPassword.isNotEmpty() && !passwordsMatch,
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
@@ -187,50 +194,60 @@ fun RegisterScreen(navController: NavHostController) {
             )
         )
 
-        // Password Match Feedback Label
         if (confirmPassword.isNotEmpty() && !passwordsMatch) {
             Text(
                 text = "Passwords do not match",
                 color = Color.Red,
                 fontSize = 12.sp,
-                modifier = Modifier.align(Alignment.Start).padding(start = 8.dp, top = 4.dp),
-                fontFamily = FontFamily.SansSerif
+                modifier = Modifier.align(Alignment.Start).padding(start = 8.dp, top = 4.dp)
             )
         }
 
         Spacer(modifier = Modifier.height(30.dp))
 
-        // 4. ACTION BUTTON (With Loading state)
         Button(
-            onClick = { isLoading = true
-                navController.navigate(route = ROUT_ROLESELECTION)
-                      },
+            onClick = {
+                isLoading = true
+                errorMessage = null
+
+                if (password != confirmPassword) {
+                    isLoading = false
+                    errorMessage = "Passwords do not match"
+                    return@Button
+                }
+
+                auth.createUserWithEmailAndPassword(email.trim(), password.trim())
+                    .addOnCompleteListener { task ->
+                        isLoading = false
+                        if (task.isSuccessful) {
+                            Toast.makeText(context, "Registered successfully", Toast.LENGTH_SHORT).show()
+                            navController.navigate("${ROUT_ROLESELECTION}/$fullName")
+                        } else {
+                            errorMessage = task.exception?.message ?: "Registration failed"
+                        }
+                    }
+            },
             enabled = isRegisterEnabled,
             modifier = Modifier.fillMaxWidth().height(58.dp),
             shape = RoundedCornerShape(14.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = colorPrimary,
                 disabledContainerColor = colorPrimary.copy(alpha = 0.5f)
-            ),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+            )
         ) {
             if (isLoading) {
                 CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
             } else {
-                Text("SIGN UP", fontWeight = FontWeight.Bold, fontSize = 16.sp, letterSpacing = 1.sp)
+                Text("SIGN UP", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
 
-        // 5. LOGIN LINK
         Row(
             modifier = Modifier.padding(vertical = 20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("Already have an account? ", color = Color.Gray, fontSize = 15.sp)
-            TextButton(
-                onClick = { navController.navigate("login") },
-                contentPadding = PaddingValues(0.dp),
-            ) {
+            TextButton(onClick = { navController.navigate("login") }) {
                 Text("Login", color = colorAccent, fontWeight = FontWeight.Black, fontSize = 15.sp)
             }
         }
@@ -241,8 +258,7 @@ fun RegisterScreen(navController: NavHostController) {
             text = "Trusted Blue-Collar Services in Nairobi",
             fontSize = 11.sp,
             color = Color.Gray.copy(alpha = 0.6f),
-            modifier = Modifier.padding(bottom = 20.dp),
-            fontFamily = FontFamily.SansSerif
+            modifier = Modifier.padding(bottom = 20.dp)
         )
     }
 }

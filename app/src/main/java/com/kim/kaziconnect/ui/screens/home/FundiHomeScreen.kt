@@ -23,10 +23,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.kim.kaziconnect.navigation.ROUT_CLIENTGIG
-import com.kim.kaziconnect.navigation.ROUT_CLIENTHOME
-import com.kim.kaziconnect.navigation.ROUT_CLIENTMESSAGES
-import com.kim.kaziconnect.navigation.ROUT_CLIENTPROFILE
+import com.kim.kaziconnect.navigation.ROUT_FUNDIHOME
+import com.kim.kaziconnect.navigation.ROUT_FUNDIJOB
+import com.kim.kaziconnect.navigation.ROUT_FUNDIMESSAGES
+import com.kim.kaziconnect.navigation.ROUT_FUNDIPROFILE
+import com.kim.kaziconnect.navigation.ROUT_REGISTER
 
 // Data Model to be moved to a separate file tomorrow
 data class JobModel(
@@ -43,67 +44,44 @@ fun FundiHomeScreen(navController: NavHostController) {
     val colorAccent = Color(0xFFEE6C4D)
     val lightBg = Color(0xFFF1F4F9)
 
-    // Data lists for Tomorrow's Database Dive
     val ongoingTasks = listOf<JobModel>()
     val availableJobs = listOf<JobModel>()
 
     Scaffold(
+        modifier = Modifier.statusBarsPadding(), // Ensures the back button isn't hidden by the status bar
         bottomBar = {
             NavigationBar(
                 containerColor = Color.White,
                 tonalElevation = 8.dp
             ) {
                 NavigationBarItem(
-                    icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
+                    icon = { Icon(Icons.Filled.Home, "Home") },
                     label = { Text("Home") },
                     selected = true,
-                    onClick = { navController.navigate(route = ROUT_CLIENTHOME) },
+                    onClick = { navController.navigate(route = ROUT_FUNDIHOME) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
                         indicatorColor = Color.Transparent
                     )
                 )
                 NavigationBarItem(
-                    icon = { Icon(Icons.Filled.List, contentDescription = "My Jobs") },
+                    icon = { Icon(Icons.Filled.List, "My Jobs") },
                     label = { Text("My Jobs") },
                     selected = false,
-                    onClick = { navController.navigate(route = ROUT_CLIENTGIG) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = colorAccent,
-                        selectedTextColor = colorAccent,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
-                        indicatorColor = Color.Transparent
-                    )
+                    onClick = { navController.navigate(route = ROUT_FUNDIJOB) }
                 )
                 NavigationBarItem(
-                    icon = { Icon(Icons.Outlined.Person, contentDescription = "Profile") },
+                    icon = { Icon(Icons.Outlined.Person, "Profile") },
                     label = { Text("Profile") },
                     selected = false,
-                    onClick = { navController.navigate(route = ROUT_CLIENTPROFILE) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = colorAccent,
-                        selectedTextColor = colorAccent,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
-                        indicatorColor = Color.Transparent
-                    )
+                    onClick = { navController.navigate(route = ROUT_FUNDIPROFILE) }
                 )
                 NavigationBarItem(
-                    icon = { Icon(Icons.Outlined.Email, contentDescription = "Messages") },
+                    icon = { Icon(Icons.Outlined.Email, "Messages") },
                     label = { Text("Messages") },
                     selected = false,
-                    onClick = { navController.navigate(route = ROUT_CLIENTMESSAGES) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = colorAccent,
-                        selectedTextColor = colorAccent,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
-                        indicatorColor = Color.Transparent
-                    )
+                    onClick = { navController.navigate(route = ROUT_FUNDIMESSAGES) }
                 )
             }
         }
@@ -118,22 +96,36 @@ fun FundiHomeScreen(navController: NavHostController) {
             item {
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // 1. HEADER
+                // 1. HEADER WITH PREVIOUS (BACK) BUTTON
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    // Previous Button
+                    IconButton(
+                        onClick = {navController.navigate(route = ROUT_REGISTER) }, // Replace "register" with your actual ROUT_REGISTER constant
+                        modifier = Modifier.background(Color.White, CircleShape).size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back to Register",
+                            tint = colorPrimary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             "Work Dashboard",
-                            fontSize = 28.sp,
+                            fontSize = 24.sp, // Adjusted slightly to fit with the back button
                             fontWeight = FontWeight.Black,
                             color = colorPrimary,
                             letterSpacing = (-0.5).sp
                         )
                         Text("Nairobi, Kenya", fontSize = 14.sp, color = Color.Gray)
                     }
+
                     Surface(shape = CircleShape, color = Color.White, shadowElevation = 2.dp) {
                         IconButton(onClick = { }) {
                             BadgedBox(badge = { Badge(containerColor = colorAccent) }) {
@@ -145,6 +137,7 @@ fun FundiHomeScreen(navController: NavHostController) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // ... rest of your code (Search, Stats, etc.) remains the same
                 // 2. SEARCH
                 Surface(
                     shape = RoundedCornerShape(16.dp),
@@ -173,12 +166,13 @@ fun FundiHomeScreen(navController: NavHostController) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     StatCard("Earnings", "KES 0", Default.Payments, colorAccent, Modifier.weight(1f))
-                    StatCard("Rating", "", Default.Star, Color(0xFFFFD700), Modifier.weight(1f))
+                    StatCard("Rating", "5.0", Default.Star, Color(0xFFFFD700), Modifier.weight(1f))
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
+            // Ongoing Tasks and Available Jobs sections follow here...
             // 4. ONGOING TASKS SECTION
             item {
                 Text("Ongoing Tasks", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = colorPrimary)
@@ -271,6 +265,11 @@ fun StatCard(title: String, value: String, icon: ImageVector, iconColor: Color, 
         }
     }
 }
+
+
+
+
+
 
 @Preview(showBackground = true)
 @Composable

@@ -22,10 +22,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.kim.kaziconnect.navigation.ROUT_CLIENTGIG
-import com.kim.kaziconnect.navigation.ROUT_CLIENTHOME
-import com.kim.kaziconnect.navigation.ROUT_CLIENTMESSAGES
-import com.kim.kaziconnect.navigation.ROUT_CLIENTPROFILE
+import com.kim.kaziconnect.navigation.ROUT_FUNDIHOME
+import com.kim.kaziconnect.navigation.ROUT_FUNDIJOB
+import com.kim.kaziconnect.navigation.ROUT_FUNDIMESSAGES
+import com.kim.kaziconnect.navigation.ROUT_FUNDIPROFILE
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,6 +35,7 @@ fun FundiProfileScreen(navController: NavHostController) {
     val lightBg = Color(0xFFF1F4F9)
 
     Scaffold(
+        modifier = Modifier.statusBarsPadding(), // Fixed: Pushes header below system status bar
         topBar = {
             Surface(shadowElevation = 0.dp) {
                 Text(
@@ -59,19 +60,19 @@ fun FundiProfileScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Outlined.Home, null) },
                     label = { Text("Home") },
                     selected = false,
-                    onClick = { navController.navigate(ROUT_CLIENTHOME) }
+                    onClick = { navController.navigate(route = ROUT_FUNDIHOME) }
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Outlined.List, null) },
                     label = { Text("My Jobs") },
                     selected = false,
-                    onClick = { navController.navigate(ROUT_CLIENTGIG) }
+                    onClick = { navController.navigate(route = ROUT_FUNDIJOB) }
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Filled.Person, null) },
                     label = { Text("Profile") },
                     selected = true,
-                    onClick = { /* Stay on current screen */ },
+                    onClick = { navController.navigate(route = ROUT_FUNDIPROFILE) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,
@@ -82,11 +83,12 @@ fun FundiProfileScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Outlined.Email, null) },
                     label = { Text("Messages") },
                     selected = false,
-                    onClick = { navController.navigate(ROUT_CLIENTMESSAGES) }
+                    onClick = { navController.navigate(route = ROUT_FUNDIMESSAGES) }
                 )
             }
         }
     ) { paddingValues ->
+        // ... (rest of your Column and helper functions remain exactly the same)
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -200,7 +202,6 @@ fun FundiProfileScreen(navController: NavHostController) {
         }
     }
 }
-
 @Composable
 fun ProfileMetricCard(label: String, value: String, icon: ImageVector, iconColor: Color, modifier: Modifier) {
     Card(
