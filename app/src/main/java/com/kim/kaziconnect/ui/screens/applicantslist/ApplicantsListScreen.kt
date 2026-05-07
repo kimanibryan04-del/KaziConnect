@@ -1,5 +1,3 @@
-
-
 package com.kim.kaziconnect.ui.screens.applicants
 
 import androidx.compose.foundation.background
@@ -8,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -80,14 +79,35 @@ fun ApplicantListScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
+
                 title = {
                     Text(
-                        "Applicants",
+                        text = "Applicants",
                         fontWeight = FontWeight.Bold,
                         color = colorPrimary
                     )
-                }
+                },
+
+                navigationIcon = {
+
+                    IconButton(
+                        onClick = {
+                            navController.popBackStack()
+                        }
+                    ) {
+
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = colorPrimary
+                        )
+                    }
+                },
+
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White
+                )
             )
         }
     ) { paddingValues ->
@@ -138,6 +158,9 @@ fun ApplicantListScreen(
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(
                                 containerColor = Color.White
+                            ),
+                            elevation = CardDefaults.cardElevation(
+                                defaultElevation = 2.dp
                             )
                         ) {
 
@@ -152,26 +175,37 @@ fun ApplicantListScreen(
                                     fontSize = 18.sp
                                 )
 
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(6.dp))
 
                                 Text(
-                                    text = applicant.skill,
-                                    color = Color.Gray
+                                    text = "Skill: ${applicant.skill}",
+                                    color = Color.Gray,
+                                    fontSize = 14.sp
                                 )
 
                                 Spacer(modifier = Modifier.height(4.dp))
 
                                 Text(
-                                    text = applicant.phone,
-                                    color = Color.Gray
+                                    text = "Phone: ${applicant.phone}",
+                                    color = Color.Gray,
+                                    fontSize = 14.sp
                                 )
 
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Text(
+                                    text = "Email: ${applicant.email}",
+                                    color = Color.Gray,
+                                    fontSize = 14.sp
+                                )
+
+                                Spacer(modifier = Modifier.height(10.dp))
 
                                 Text(
                                     text = "⭐ ${applicant.rating}",
                                     color = colorAccent,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp
                                 )
                             }
                         }

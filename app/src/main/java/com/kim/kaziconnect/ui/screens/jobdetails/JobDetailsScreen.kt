@@ -1,5 +1,6 @@
 package com.kim.kaziconnect.ui.screens.jobdetails
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -12,10 +13,11 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -28,10 +30,16 @@ import com.google.firebase.database.FirebaseDatabase
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JobDetailsScreen(
-navController: NavHostController,
-jobId: String,
-showApplyButton: Boolean = true)
- {
+    navController: NavHostController,
+    jobId: String,
+    showApplyButton: Boolean = true
+) {
+
+    var hasApplied by remember {
+        mutableStateOf(false)
+    }
+
+    val context = LocalContext.current
 
     // COLORS
     val colorPrimary = Color(0xFF1B263B)
@@ -39,11 +47,59 @@ showApplyButton: Boolean = true)
     val lightBg = Color(0xFFF1F4F9)
 
     // TEMP DATA
-    val jobTitle = "Plumbing Repair"
-    val location = "Roysambu, Nairobi"
-    val budget = "KSH 2500"
-    val description =
-        "Kitchen sink leaking and water pressure is low. Need urgent repair today if possible."
+    var jobTitle by remember {
+        mutableStateOf("")
+    }
+
+    var location by remember {
+        mutableStateOf("")
+    }
+
+    var budget by remember {
+        mutableStateOf("")
+    }
+
+    var description by remember {
+        mutableStateOf("")
+    }
+
+    LaunchedEffect(Unit) {
+
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
+        FirebaseDatabase.getInstance().reference
+            .child("applications")
+            .child(jobId)
+            .child(userId)
+            .get()
+            .addOnSuccessListener {
+
+                hasApplied = it.exists()
+            }
+
+        FirebaseDatabase.getInstance().reference
+            .child("jobs")
+            .child(jobId)
+            .get()
+            .addOnSuccessListener { snapshot ->
+
+                jobTitle =
+                    snapshot.child("title")
+                        .getValue(String::class.java) ?: ""
+
+                location =
+                    snapshot.child("location")
+                        .getValue(String::class.java) ?: ""
+
+                budget =
+                    snapshot.child("budget")
+                        .getValue(String::class.java) ?: ""
+
+                description =
+                    snapshot.child("description")
+                        .getValue(String::class.java) ?: ""
+            }
+    }
 
     Scaffold(
         topBar = {
@@ -201,33 +257,66 @@ showApplyButton: Boolean = true)
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // APPLY BUTTON
-            if (showApplyButton) {
-            Button(
-                onClick = {
-                    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+            // APPLY SECTION
+            if (!hasApplied && showApplyButton) {
 
-                    FirebaseDatabase.getInstance().reference
-                        .child("applications")
-                        .child(jobId)
-                        .child(userId)
-                        .setValue(true)
+                Button(
+                    onClick = {
 
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(58.dp),
-                shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = colorAccent
-                )
-            ) {
-                Text(
-                    text = "Apply For This Job",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                        val userId =
+                            FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
+                        FirebaseDatabase.getInstance().reference
+                            .child("applications")
+                            .child(jobId)
+                            .child(userId)
+                            .setValue(true)
+                            .addOnSuccessListener {
+
+                                hasApplied = true
+
+                                Toast.makeText(
+                                    context,
+                                    "Application sent",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(58.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colorAccent
+                    )
+                ) {
+                    Text(
+                        text = "Apply For This Job",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+
+            } else if (showApplyButton) {
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFE8F5E9)
+                    ),
+                    shape = RoundedCornerShape(18.dp)
+                ) {
+
+                    Text(
+                        text = "Application Sent ✅",
+                        modifier = Modifier.padding(18.dp),
+                        color = Color(0xFF2E7D32),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(30.dp))
@@ -235,13 +324,12 @@ showApplyButton: Boolean = true)
     }
 }
 
-     @Preview(showBackground = true)
-     @Composable
-     fun JobDetailsScreenPreview() {
-         JobDetailsScreen(
-             navController = rememberNavController(),
-             jobId = "",
-             showApplyButton = true
-         )
-     }
+@Preview(showBackground = true)
+@Composable
+fun JobDetailsScreenPreview() {
+    JobDetailsScreen(
+        navController = rememberNavController(),
+        jobId = "",
+        showApplyButton = true
+    )
 }
