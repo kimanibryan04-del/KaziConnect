@@ -28,24 +28,196 @@ import com.kim.kaziconnect.navigation.ROUT_FUNDIJOB
 import com.kim.kaziconnect.navigation.ROUT_FUNDIMESSAGES
 import com.kim.kaziconnect.navigation.ROUT_FUNDIPROFILE
 import com.kim.kaziconnect.navigation.ROUT_REGISTER
-
-// Data Model to be moved to a separate file tomorrow
-data class JobModel(
-    val id: String = "",
-    val title: String = "",
-    val location: String = "",
-    val budget: String = ""
-)
+import androidx.compose.runtime.*
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.*
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.kim.kaziconnect.navigation.ROUT_FUNDINOTIFICATION
+import com.kim.kaziconnect.models.FundiStats
+import androidx.compose.foundation.clickable
+import com.kim.kaziconnect.navigation.ROUT_JOBDETAILS
+import com.kim.kaziconnect.models.JobModel
+import com.kim.kaziconnect.navigation.ROUT_JOBDETAILS_NOAPPLY
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FundiHomeScreen(navController: NavHostController) {
+
+    var stats by remember {
+        mutableStateOf(FundiStats())
+    }
+
+    val database = FirebaseDatabase.getInstance().reference
+
+
+    var unreadCount by remember {
+        mutableStateOf(0)
+
+
+    }
+    LaunchedEffect(Unit) {
+
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+            ?: return@LaunchedEffect
+
+        FirebaseDatabase.getInstance().reference
+            .child("notifications")
+            .child(userId)
+            .addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+
+                    try {
+
+                        var count = 0
+
+                        for (notificationSnapshot in snapshot.children) {
+
+                            val read = notificationSnapshot
+                                .child("read")
+                                .getValue(Boolean::class.java) ?: false
+
+                            if (!read) {
+                                count++
+                            }
+                        }
+
+                        unreadCount = count
+
+                    } catch (e: Exception) {
+
+                        e.printStackTrace()
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+    }
+
+
+    LaunchedEffect(Unit) {
+
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+            ?: return@LaunchedEffect
+
+        FirebaseDatabase.getInstance().reference
+            .child("fundiStats")
+            .child(userId)
+            .addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+
+                    try {
+
+                        val data =
+                            snapshot.getValue(FundiStats::class.java)
+
+                        if (data != null) {
+                            stats = data
+                        }
+
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+    }
+
+
+
     val colorPrimary = Color(0xFF1B263B)
     val colorAccent = Color(0xFFEE6C4D)
     val lightBg = Color(0xFFF1F4F9)
 
-    val ongoingTasks = listOf<JobModel>()
-    val availableJobs = listOf<JobModel>()
+    val availableJobs = remember { mutableStateListOf<JobModel>() }
+
+    val ongoingTasks = remember { mutableStateListOf<JobModel>() }
+
+    var searchText by remember { mutableStateOf("") }
+
+    val filteredJobs = availableJobs.filter { job ->
+
+        job.title.contains(searchText, ignoreCase = true) ||
+                job.location.contains(searchText, ignoreCase = true)
+
+    }
+    LaunchedEffect(Unit) {
+
+        database.child("jobs")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+
+                    availableJobs.clear()
+
+                    for (jobSnapshot in snapshot.children) {
+
+                        try {
+
+                            val job = jobSnapshot.getValue(JobModel::class.java)
+
+                            if (job != null) {
+
+                                job.id = jobSnapshot.key ?: ""
+
+                                availableJobs.add(job)
+                            }
+
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+    }
+
+    LaunchedEffect(Unit) {
+
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+            ?: return@LaunchedEffect
+
+        database.child("ongoingJobs")
+            .child(userId)
+            .addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+
+                    try {
+
+                        ongoingTasks.clear()
+
+                        for (jobSnapshot in snapshot.children) {
+
+                            val job =
+                                jobSnapshot.getValue(JobModel::class.java)
+
+                            if (job != null) {
+                                ongoingTasks.add(job)
+                            }
+                        }
+
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+    }
+
 
     Scaffold(
         modifier = Modifier.statusBarsPadding(), // Ensures the back button isn't hidden by the status bar
@@ -58,7 +230,9 @@ fun FundiHomeScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Filled.Home, "Home") },
                     label = { Text("Home") },
                     selected = true,
-                    onClick = { navController.navigate(route = ROUT_FUNDIHOME) },
+                    onClick = {navController.navigate(ROUT_FUNDIHOME) {
+                        launchSingleTop = true
+                    } },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,
@@ -69,19 +243,25 @@ fun FundiHomeScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Filled.List, "My Jobs") },
                     label = { Text("My Jobs") },
                     selected = false,
-                    onClick = { navController.navigate(route = ROUT_FUNDIJOB) }
+                    onClick = { navController.navigate(ROUT_FUNDIJOB) {
+                        launchSingleTop = true
+                    } }
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Outlined.Person, "Profile") },
                     label = { Text("Profile") },
                     selected = false,
-                    onClick = { navController.navigate(route = ROUT_FUNDIPROFILE) }
+                    onClick = { navController.navigate(ROUT_FUNDIPROFILE) {
+                        launchSingleTop = true
+                    } }
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Outlined.Email, "Messages") },
                     label = { Text("Messages") },
                     selected = false,
-                    onClick = { navController.navigate(route = ROUT_FUNDIMESSAGES) }
+                    onClick = {navController.navigate(ROUT_FUNDIMESSAGES) {
+                        launchSingleTop = true
+                    } }
                 )
             }
         }
@@ -127,8 +307,24 @@ fun FundiHomeScreen(navController: NavHostController) {
                     }
 
                     Surface(shape = CircleShape, color = Color.White, shadowElevation = 2.dp) {
-                        IconButton(onClick = { }) {
-                            BadgedBox(badge = { Badge(containerColor = colorAccent) }) {
+                        IconButton(onClick = {navController.navigate(ROUT_FUNDINOTIFICATION) }) {
+                            BadgedBox(
+                                badge = {
+
+                                    if (unreadCount > 0) {
+
+                                        Badge(
+                                            containerColor = colorAccent
+                                        ) {
+
+                                            Text(
+                                                text = unreadCount.toString(),
+                                                color = Color.White
+                                            )
+                                        }
+                                    }
+                                }
+                            ) {
                                 Icon(Default.Notifications, null, tint = colorPrimary)
                             }
                         }
@@ -138,7 +334,8 @@ fun FundiHomeScreen(navController: NavHostController) {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // ... rest of your code (Search, Stats, etc.) remains the same
-                // 2. SEARCH
+
+                // SEARCH BAR
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = Color.White,
@@ -146,27 +343,54 @@ fun FundiHomeScreen(navController: NavHostController) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
-                        value = "",
-                        onValueChange = {},
-                        placeholder = { Text("Search for jobs in Roysambu...", fontSize = 14.sp) },
-                        leadingIcon = { Icon(Default.Search, null, tint = colorAccent) },
+                        value = searchText,
+                        onValueChange = {
+                            searchText = it
+                        },
+                        placeholder = {
+                            Text(
+                                "Search for jobs",
+                                fontSize = 14.sp
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = null,
+                                tint = colorAccent
+                            )
+                        },
                         modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color.Transparent,
-                            unfocusedBorderColor = Color.Transparent
-                        ),
-                        singleLine = true
+                            unfocusedBorderColor = Color.Transparent,
+                            disabledBorderColor = Color.Transparent,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
                     )
                 }
-
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // 3. STATS
                 Text("Your Performance", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = colorPrimary)
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    StatCard("Earnings", "KES 0", Default.Payments, colorAccent, Modifier.weight(1f))
-                    StatCard("Rating", "5.0", Default.Star, Color(0xFFFFD700), Modifier.weight(1f))
+                    StatCard(
+                        "Earnings",
+                        "KES ${stats.earnings}",
+                        Default.Payments,
+                        colorAccent,
+                        Modifier.weight(1f)
+                    )
+                    StatCard(
+                        "Rating",
+                        stats.rating.toString(),
+                        Default.Star,
+                        Color(0xFFFFD700),
+                        Modifier.weight(1f)
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -195,17 +419,59 @@ fun FundiHomeScreen(navController: NavHostController) {
                 }
             } else {
                 items(ongoingTasks) { task ->
-                    CleanJobCard(task, colorPrimary, colorAccent)
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .clickable {
+                                navController.navigate("${ROUT_JOBDETAILS_NOAPPLY}/${task.id}")
+                            },
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+                    ) {
+
+                        Row(
+                            modifier = Modifier.padding(20.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+
+                            Column(modifier = Modifier.weight(1f)) {
+
+                                Text(
+                                    text = task.title,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colorPrimary,
+                                    fontSize = 16.sp
+                                )
+
+                                Text(
+                                    text = task.location,
+                                    color = Color.Gray,
+                                    fontSize = 13.sp
+                                )
+                            }
+
+                            Text(
+                                text = task.budget,
+                                fontWeight = FontWeight.Black,
+                                color = colorAccent,
+                                fontSize = 16.sp
+                            )
+                        }
+                    }
                 }
             }
 
             // 5. AVAILABLE GIGS SECTION
             item {
-                Text("Available Jobs Near You", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = colorPrimary)
+                Text("Available Jobs ", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = colorPrimary)
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            if (availableJobs.isEmpty()) {
+            if (filteredJobs.isEmpty()) {
                 item {
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
@@ -217,8 +483,47 @@ fun FundiHomeScreen(navController: NavHostController) {
                     }
                 }
             } else {
-                items(availableJobs) { job ->
-                    CleanJobCard(job, colorPrimary, colorAccent)
+                items(filteredJobs) { job ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .clickable {
+                                navController.navigate("${ROUT_JOBDETAILS}/${job.id}")
+                            },
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(20.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+
+                                Text(
+                                    text = job.title,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colorPrimary,
+                                    fontSize = 16.sp
+                                )
+
+                                Text(
+                                    text = job.location,
+                                    color = Color.Gray,
+                                    fontSize = 13.sp
+                                )
+                            }
+
+                            Text(
+                                text = job.budget,
+                                fontWeight = FontWeight.Black,
+                                color = colorAccent,
+                                fontSize = 16.sp
+                            )
+                        }
+                    }
                 }
             }
 
@@ -241,10 +546,10 @@ fun CleanJobCard(job: JobModel, colorPrimary: Color, colorAccent: Color) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(job.title, fontWeight = FontWeight.Bold, color = colorPrimary, fontSize = 16.sp)
-                Text(job.location, color = Color.Gray, fontSize = 13.sp)
+                Text(job.title ?: "", fontWeight = FontWeight.Bold, color = colorPrimary, fontSize = 16.sp)
+                Text(job.location ?: "", color = Color.Gray, fontSize = 13.sp)
             }
-            Text(job.budget, fontWeight = FontWeight.Black, color = colorAccent, fontSize = 16.sp)
+            Text(job.budget ?: "", fontWeight = FontWeight.Black, color = colorAccent, fontSize = 16.sp)
         }
     }
 }

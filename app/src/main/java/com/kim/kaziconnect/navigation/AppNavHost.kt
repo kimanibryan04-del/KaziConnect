@@ -10,9 +10,12 @@ import com.kim.kaziconnect.ui.screens.gig.ClientGigScreen
 import com.kim.kaziconnect.ui.screens.gig.FundiJobScreen
 import com.kim.kaziconnect.ui.screens.home.ClientHomeScreen
 import com.kim.kaziconnect.ui.screens.home.FundiHomeScreen
+import com.kim.kaziconnect.ui.screens.jobdetails.JobDetailsScreen
 import com.kim.kaziconnect.ui.screens.login.LoginScreen
 import com.kim.kaziconnect.ui.screens.messages.ClientMessagesScreen
 import com.kim.kaziconnect.ui.screens.messages.FundiMessagesScreen
+import com.kim.kaziconnect.ui.screens.notification.ClientNotificationScreen
+import com.kim.kaziconnect.ui.screens.notification.FundiNotificationScreen
 import com.kim.kaziconnect.ui.screens.profile.ClientProfileScreen
 import com.kim.kaziconnect.ui.screens.register.RegisterScreen
 import com.kim.kaziconnect.ui.screens.onboarding.RoleSelectionScreen
@@ -71,6 +74,32 @@ fun AppNavHost(
         }
         composable(ROUT_FUNDIMESSAGES) {
             FundiMessagesScreen(navController)
+        }
+        composable(ROUT_CLIENTNOTIFICATION) {
+            ClientNotificationScreen(navController)
+        }
+        composable(ROUT_FUNDINOTIFICATION) {
+            FundiNotificationScreen(navController)
+        }
+        composable("${ROUT_JOBDETAILS}/{jobId}") {
+
+            val jobId = it.arguments?.getString("jobId") ?: ""
+
+            JobDetailsScreen(
+                navController = navController,
+                jobId = jobId,
+                showApplyButton = true
+            )
+        }
+        composable("${ROUT_JOBDETAILS_NOAPPLY}/{jobId}") {
+
+            val jobId = it.arguments?.getString("jobId") ?: ""
+
+            JobDetailsScreen(
+                navController = navController,
+                jobId = jobId,
+                showApplyButton = false
+            )
         }
 
 

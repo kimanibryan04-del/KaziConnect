@@ -49,7 +49,9 @@ fun FundiMessagesScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Outlined.Home, null) },
                     label = { Text("Home") },
                     selected = false,
-                    onClick = { navController.navigate(route = ROUT_FUNDIHOME) },
+                    onClick = { navController.navigate(ROUT_FUNDIHOME) {
+                        launchSingleTop = true
+                    } },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         indicatorColor = Color.Transparent
@@ -59,7 +61,9 @@ fun FundiMessagesScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Outlined.List, null) },
                     label = { Text("My Jobs") },
                     selected = false,
-                    onClick = { navController.navigate(route = ROUT_FUNDIJOB) },
+                    onClick = { navController.navigate(ROUT_FUNDIJOB) {
+                        launchSingleTop = true
+                    } },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         indicatorColor = Color.Transparent
@@ -69,7 +73,9 @@ fun FundiMessagesScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Outlined.Person, null) },
                     label = { Text("Profile") },
                     selected = false,
-                    onClick = { navController.navigate(route = ROUT_FUNDIPROFILE) },
+                    onClick = { navController.navigate(ROUT_FUNDIPROFILE) {
+                        launchSingleTop = true
+                    } },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         indicatorColor = Color.Transparent
@@ -79,7 +85,9 @@ fun FundiMessagesScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Filled.Email, null) },
                     label = { Text("Messages") },
                     selected = true,
-                    onClick = { navController.navigate(route = ROUT_FUNDIMESSAGES) },
+                    onClick = {navController.navigate(ROUT_FUNDIMESSAGES) {
+                        launchSingleTop = true
+                    } },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,

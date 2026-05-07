@@ -50,7 +50,9 @@ fun ClientProfileScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Outlined.Home, contentDescription = "Home") },
                     label = { Text("Home") },
                     selected = false,
-                    onClick = { navController.navigate(route = ROUT_CLIENTHOME) },
+                    onClick = { navController.navigate(ROUT_CLIENTHOME) {
+                        launchSingleTop = true
+                    } },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         indicatorColor = Color.Transparent
@@ -60,7 +62,9 @@ fun ClientProfileScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Filled.List, contentDescription = "Gigs") },
                     label = { Text("Gigs") },
                     selected = false,
-                    onClick = { navController.navigate(route = ROUT_CLIENTGIG) },
+                    onClick = { navController.navigate(ROUT_CLIENTGIG) {
+                        launchSingleTop = true
+                    } },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         indicatorColor = Color.Transparent
@@ -70,7 +74,9 @@ fun ClientProfileScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Filled.Person, contentDescription = "Profile") },
                     label = { Text("Profile") },
                     selected = true,
-                    onClick = { /* Stay on current screen */ },
+                    onClick = {navController.navigate(ROUT_CLIENTPROFILE) {
+                        launchSingleTop = true
+                    } },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,
@@ -81,7 +87,9 @@ fun ClientProfileScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Outlined.Email, contentDescription = "Messages") },
                     label = { Text("Messages") },
                     selected = false,
-                    onClick = { navController.navigate(route = ROUT_CLIENTMESSAGES) },
+                    onClick = { navController.navigate(ROUT_CLIENTMESSAGES) {
+                        launchSingleTop = true
+                    }},
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         indicatorColor = Color.Transparent

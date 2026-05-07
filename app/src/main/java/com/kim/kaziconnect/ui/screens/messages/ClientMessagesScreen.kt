@@ -49,7 +49,9 @@ fun ClientMessagesScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Outlined.Home, contentDescription = "Home") },
                     label = { Text("Home") },
                     selected = false,
-                    onClick = {  navController.navigate(route = ROUT_CLIENTHOME) },
+                    onClick = {  navController.navigate(ROUT_CLIENTHOME) {
+                        launchSingleTop = true
+                    } },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,
@@ -62,7 +64,9 @@ fun ClientMessagesScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Filled.List, contentDescription = "Gigs") },
                     label = { Text("Gigs") },
                     selected = false,
-                    onClick = {  navController.navigate(route = ROUT_CLIENTGIG) },
+                    onClick = { navController.navigate(ROUT_CLIENTGIG) {
+                        launchSingleTop = true
+                    } },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,
@@ -75,7 +79,9 @@ fun ClientMessagesScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Outlined.Person, contentDescription = "Profile") },
                     label = { Text("Profile") },
                     selected = false,
-                    onClick = { navController.navigate(route = ROUT_CLIENTPROFILE) },
+                    onClick = {navController.navigate(ROUT_CLIENTPROFILE) {
+                        launchSingleTop = true
+                    } },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,
@@ -89,7 +95,9 @@ fun ClientMessagesScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Outlined.Email, contentDescription = "Messages") },
                     label = { Text("Messages") },
                     selected = true,
-                    onClick = { navController.navigate(route = ROUT_CLIENTMESSAGES) },
+                    onClick = { navController.navigate(ROUT_CLIENTMESSAGES) {
+                        launchSingleTop = true
+                    } },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,

@@ -13,7 +13,7 @@ import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,58 +25,92 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.*
 import com.kim.kaziconnect.navigation.ROUT_CLIENTGIG
 import com.kim.kaziconnect.navigation.ROUT_CLIENTHOME
 import com.kim.kaziconnect.navigation.ROUT_CLIENTMESSAGES
+import com.kim.kaziconnect.navigation.ROUT_CLIENTNOTIFICATION
 import com.kim.kaziconnect.navigation.ROUT_CLIENTPROFILE
 import com.kim.kaziconnect.navigation.ROUT_REGISTER
-import com.kim.kaziconnect.navigation.ROUT_ROLESELECTION
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientHomeScreen(navController: NavHostController) {
-    // Deep Cobalt Blue and Vibrant Orange branding
+
+    val auth = FirebaseAuth.getInstance()
+    val database = FirebaseDatabase.getInstance().reference
+
+    // COLORS
     val colorPrimary = Color(0xFF1B263B)
     val colorAccent = Color(0xFFEE6C4D)
     val lightBg = Color(0xFFF1F4F9)
 
+    // STATES
+    var searchText by remember {
+        mutableStateOf("")
+    }
+
+    var unreadCount by remember {
+        mutableStateOf(0)
+    }
+
+    // LOAD UNREAD NOTIFICATIONS
+    LaunchedEffect(Unit) {
+
+        val userId = auth.currentUser?.uid
+            ?: return@LaunchedEffect
+
+        database.child("notifications")
+            .child(userId)
+            .addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+
+                    var count = 0
+
+                    for (notificationSnapshot in snapshot.children) {
+
+                        val read = notificationSnapshot
+                            .child("read")
+                            .getValue(Boolean::class.java) ?: false
+
+                        if (!read) {
+                            count++
+                        }
+                    }
+
+                    unreadCount = count
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+    }
+
     Scaffold(
         bottomBar = {
+
             NavigationBar(
                 containerColor = Color.White,
                 tonalElevation = 8.dp
             ) {
+
                 NavigationBarItem(
-                    icon = { Icon(Icons.Outlined.Home, contentDescription = "Home") },
+                    icon = {
+                        Icon(
+                            Icons.Outlined.Home,
+                            contentDescription = "Home"
+                        )
+                    },
                     label = { Text("Home") },
                     selected = true,
-                    onClick = {  navController.navigate(route = ROUT_CLIENTHOME) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = colorAccent,
-                        selectedTextColor = colorAccent,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
-                        indicatorColor = Color.Transparent
-                    )
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Filled.List, contentDescription = "Gigs") },
-                    label = { Text("Gigs") },
-                    selected = false,
-                    onClick = { navController.navigate(route = ROUT_CLIENTGIG) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = colorAccent,
-                        selectedTextColor = colorAccent,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
-                        indicatorColor = Color.Transparent
-                    )
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Outlined.Person, contentDescription = "Profile") },
-                    label = { Text("Profile") },
-                    selected = false,
-                    onClick = { navController.navigate(route = ROUT_CLIENTPROFILE) },
+                    onClick = {
+                        navController.navigate(ROUT_CLIENTHOME) {
+                            launchSingleTop = true
+                        }
+                    },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,
@@ -87,10 +121,65 @@ fun ClientHomeScreen(navController: NavHostController) {
                 )
 
                 NavigationBarItem(
-                    icon = { Icon(Icons.Outlined.Email, contentDescription = "Messages") },
+                    icon = {
+                        Icon(
+                            Icons.Filled.List,
+                            contentDescription = "Gigs"
+                        )
+                    },
+                    label = { Text("Gigs") },
+                    selected = false,
+                    onClick = {
+                        navController.navigate(ROUT_CLIENTGIG) {
+                            launchSingleTop = true
+                        }
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = colorAccent,
+                        selectedTextColor = colorAccent,
+                        unselectedIconColor = Color.Gray,
+                        unselectedTextColor = Color.Gray,
+                        indicatorColor = Color.Transparent
+                    )
+                )
+
+                NavigationBarItem(
+                    icon = {
+                        Icon(
+                            Icons.Outlined.Person,
+                            contentDescription = "Profile"
+                        )
+                    },
+                    label = { Text("Profile") },
+                    selected = false,
+                    onClick = {
+                        navController.navigate(ROUT_CLIENTPROFILE) {
+                            launchSingleTop = true
+                        }
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = colorAccent,
+                        selectedTextColor = colorAccent,
+                        unselectedIconColor = Color.Gray,
+                        unselectedTextColor = Color.Gray,
+                        indicatorColor = Color.Transparent
+                    )
+                )
+
+                NavigationBarItem(
+                    icon = {
+                        Icon(
+                            Icons.Outlined.Email,
+                            contentDescription = "Messages"
+                        )
+                    },
                     label = { Text("Messages") },
                     selected = false,
-                    onClick = {  navController.navigate(route = ROUT_CLIENTMESSAGES) },
+                    onClick = {
+                        navController.navigate(ROUT_CLIENTMESSAGES) {
+                            launchSingleTop = true
+                        }
+                    },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,
@@ -102,6 +191,7 @@ fun ClientHomeScreen(navController: NavHostController) {
             }
         }
     ) { paddingValues ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -110,43 +200,87 @@ fun ClientHomeScreen(navController: NavHostController) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
         ) {
+
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 1. HEADER
+            // HEADER
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+
                 IconButton(
-                    onClick = {navController.navigate(route = ROUT_REGISTER) }, // Replace "register" with your actual ROUT_REGISTER constant
-                    modifier = Modifier.background(Color.White, CircleShape).size(40.dp)
+                    onClick = {
+                        navController.navigate(route = ROUT_REGISTER)
+                    },
+                    modifier = Modifier
+                        .background(Color.White, CircleShape)
+                        .size(40.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back to Register",
+                        contentDescription = "Back",
                         tint = colorPrimary
                     )
                 }
 
                 Column {
+
                     Text(
-                        "Find Help Nearby",
+                        text = "Find Help Nearby",
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Black,
-                        color = colorPrimary,
-                        letterSpacing = (-0.5).sp
+                        color = colorPrimary
                     )
-                    Text("Nairobi, Kenya", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+
+                    Text(
+                        text = "Nairobi, Kenya",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
                 }
+
                 Surface(
                     shape = CircleShape,
                     color = Color.White,
                     shadowElevation = 2.dp
                 ) {
-                    IconButton(onClick = { /* Notifications Logic */ }) {
-                        BadgedBox(badge = { Badge(containerColor = colorAccent) }) {
-                            Icon(Default.Notifications, contentDescription = null, tint = colorPrimary, modifier = Modifier.size(26.dp))
+
+                    IconButton(
+                        onClick = {
+                            navController.navigate(
+                                ROUT_CLIENTNOTIFICATION
+                            )
+                        }
+                    ) {
+
+                        BadgedBox(
+
+                            badge = {
+
+                                if (unreadCount > 0) {
+
+                                    Badge(
+                                        containerColor = colorAccent
+                                    ) {
+
+                                        Text(
+                                            text = unreadCount.toString(),
+                                            color = Color.White
+                                        )
+                                    }
+                                }
+                            }
+
+                        ) {
+
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = null,
+                                tint = colorPrimary,
+                                modifier = Modifier.size(26.dp)
+                            )
                         }
                     }
                 }
@@ -154,17 +288,23 @@ fun ClientHomeScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 2. SEARCH BAR (Fixed Error Version)
+            // SEARCH BAR
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = Color.White,
                 shadowElevation = 8.dp,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
             ) {
+
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = {},
+                    value = searchText,
+                    onValueChange = {
+                        searchText = it
+                    },
                     placeholder = {
+
                         Text(
                             text = "Search plumbers, painters, masons...",
                             color = colorPrimary.copy(alpha = 0.4f),
@@ -172,11 +312,11 @@ fun ClientHomeScreen(navController: NavHostController) {
                         )
                     },
                     leadingIcon = {
+
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = null,
-                            tint = colorAccent,
-                            modifier = Modifier.size(22.dp)
+                            tint = colorAccent
                         )
                     },
                     textStyle = TextStyle(
@@ -190,7 +330,6 @@ fun ClientHomeScreen(navController: NavHostController) {
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         disabledContainerColor = Color.Transparent,
-                        // This is the key: we make the outline transparent
                         focusedBorderColor = Color.Transparent,
                         unfocusedBorderColor = Color.Transparent,
                         cursorColor = colorAccent
@@ -201,8 +340,14 @@ fun ClientHomeScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // 3. AVAILABLE SERVICES (Grid layout with aspect ratio)
-            Text("Available Services", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = colorPrimary)
+            // SERVICES
+            Text(
+                "Available Services",
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 18.sp,
+                color = colorPrimary
+            )
+
             Spacer(modifier = Modifier.height(16.dp))
 
             val services = listOf(
@@ -214,45 +359,108 @@ fun ClientHomeScreen(navController: NavHostController) {
                 Triple("Cleaning", Default.LocalLaundryService, Color(0xFFFFEBEE))
             )
 
-            services.chunked(2).forEach { rowItems ->
+            val filteredServices = services.filter {
+
+                it.first.contains(
+                    searchText,
+                    ignoreCase = true
+                )
+            }
+
+            filteredServices.chunked(2).forEach { rowItems ->
+
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+
                     rowItems.forEach { (name, icon, bg) ->
-                        ServiceCard(name, icon, bg, colorPrimary, Modifier.weight(1f))
+
+                        ServiceCard(
+                            name,
+                            icon,
+                            bg,
+                            colorPrimary,
+                            Modifier.weight(1f)
+                        )
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 4. FEATURED PROVIDERS (Testing state)
-            Text("Featured Providers", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = colorPrimary)
+            // FEATURED PROVIDERS
+            Text(
+                "Featured Providers",
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 18.sp,
+                color = colorPrimary
+            )
+
             Box(
-                modifier = Modifier.fillMaxWidth().height(140.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(140.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(color = colorAccent, strokeWidth = 3.dp, modifier = Modifier.size(32.dp))
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    CircularProgressIndicator(
+                        color = colorAccent,
+                        strokeWidth = 3.dp,
+                        modifier = Modifier.size(32.dp)
+                    )
+
                     Spacer(Modifier.height(12.dp))
-                    Text("Searching for experts...", color = Color.Gray.copy(alpha = 0.8f), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+
+                    Text(
+                        "Searching for experts...",
+                        color = Color.Gray,
+                        fontSize = 13.sp
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 5. ONGOING TASKS (Testing state)
-            Text("My Ongoing Tasks", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = colorPrimary)
+            // TASKS
+            Text(
+                "My Ongoing Tasks",
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 18.sp,
+                color = colorPrimary
+            )
+
             Spacer(modifier = Modifier.height(12.dp))
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                ),
                 shape = RoundedCornerShape(20.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 2.dp
+                )
             ) {
-                Box(modifier = Modifier.padding(40.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Text("No active tasks found", color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+
+                Box(
+                    modifier = Modifier
+                        .padding(40.dp)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+
+                    Text(
+                        "No active tasks found",
+                        color = Color.Gray,
+                        fontSize = 14.sp
+                    )
                 }
             }
 
@@ -262,26 +470,50 @@ fun ClientHomeScreen(navController: NavHostController) {
 }
 
 @Composable
-fun ServiceCard(name: String, icon: ImageVector, iconBg: Color, primaryColor: Color, modifier: Modifier) {
+fun ServiceCard(
+    name: String,
+    icon: ImageVector,
+    iconBg: Color,
+    primaryColor: Color,
+    modifier: Modifier
+) {
+
     Surface(
-        modifier = modifier.aspectRatio(1f), // Ensures perfect square shape
+        modifier = modifier.aspectRatio(1f),
         shape = RoundedCornerShape(24.dp),
         color = Color.White,
         shadowElevation = 4.dp
     ) {
+
         Column(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+
             Box(
-                modifier = Modifier.size(56.dp).background(iconBg, CircleShape),
+                modifier = Modifier
+                    .size(56.dp)
+                    .background(iconBg, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, null, tint = primaryColor, modifier = Modifier.size(26.dp))
+
+                Icon(
+                    icon,
+                    null,
+                    tint = primaryColor,
+                    modifier = Modifier.size(26.dp)
+                )
             }
+
             Spacer(Modifier.height(12.dp))
-            Text(name, fontWeight = FontWeight.Bold, color = primaryColor, fontSize = 14.sp)
+
+            Text(
+                name,
+                fontWeight = FontWeight.Bold,
+                color = primaryColor,
+                fontSize = 14.sp
+            )
         }
     }
 }

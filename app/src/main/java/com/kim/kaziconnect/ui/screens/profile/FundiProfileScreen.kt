@@ -60,19 +60,25 @@ fun FundiProfileScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Outlined.Home, null) },
                     label = { Text("Home") },
                     selected = false,
-                    onClick = { navController.navigate(route = ROUT_FUNDIHOME) }
+                    onClick = { navController.navigate(ROUT_FUNDIHOME) {
+                        launchSingleTop = true
+                    } }
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Outlined.List, null) },
                     label = { Text("My Jobs") },
                     selected = false,
-                    onClick = { navController.navigate(route = ROUT_FUNDIJOB) }
+                    onClick = { navController.navigate(ROUT_FUNDIJOB) {
+                        launchSingleTop = true
+                    } }
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Filled.Person, null) },
                     label = { Text("Profile") },
                     selected = true,
-                    onClick = { navController.navigate(route = ROUT_FUNDIPROFILE) },
+                    onClick = {navController.navigate(ROUT_FUNDIPROFILE) {
+                        launchSingleTop = true
+                    } },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,
@@ -83,7 +89,9 @@ fun FundiProfileScreen(navController: NavHostController) {
                     icon = { Icon(Icons.Outlined.Email, null) },
                     label = { Text("Messages") },
                     selected = false,
-                    onClick = { navController.navigate(route = ROUT_FUNDIMESSAGES) }
+                    onClick = { navController.navigate(ROUT_FUNDIMESSAGES) {
+                        launchSingleTop = true
+                    } }
                 )
             }
         }
