@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.kim.kaziconnect.ui.screens.applicants.ApplicantListScreen
 import com.kim.kaziconnect.ui.screens.gig.ClientGigScreen
 import com.kim.kaziconnect.ui.screens.gig.FundiJobScreen
 import com.kim.kaziconnect.ui.screens.home.ClientHomeScreen
@@ -19,6 +20,7 @@ import com.kim.kaziconnect.ui.screens.notification.FundiNotificationScreen
 import com.kim.kaziconnect.ui.screens.profile.ClientProfileScreen
 import com.kim.kaziconnect.ui.screens.register.RegisterScreen
 import com.kim.kaziconnect.ui.screens.onboarding.RoleSelectionScreen
+import com.kim.kaziconnect.ui.screens.postjob.PostJobScreen
 import com.kim.kaziconnect.ui.screens.profile.FundiProfileScreen
 import com.kim.kaziconnect.ui.screens.splash.SplashScreen
 
@@ -99,6 +101,18 @@ fun AppNavHost(
                 navController = navController,
                 jobId = jobId,
                 showApplyButton = false
+            )
+        }
+        composable(ROUT_POSTJOB) {
+            PostJobScreen(navController)
+        }
+        composable("${ROUT_APPLICANTSLIST}/{jobId}") {
+
+            val jobId = it.arguments?.getString("jobId") ?: ""
+
+            ApplicantListScreen(
+                navController = navController,
+                jobId = jobId
             )
         }
 

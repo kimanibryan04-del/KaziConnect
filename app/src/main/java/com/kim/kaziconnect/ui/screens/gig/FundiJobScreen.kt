@@ -102,6 +102,78 @@ fun FundiJobScreen(navController: NavHostController) {
             })
     }
 
+    LaunchedEffect(Unit) {
+
+        FirebaseDatabase.getInstance().reference
+            .child("ongoingJobs")
+            .child(userId)
+            .addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+
+                    activeJobs.clear()
+
+                    for (jobSnapshot in snapshot.children) {
+
+                        try {
+
+                            val job =
+                                jobSnapshot.getValue(JobModel::class.java)
+
+                            if (job != null) {
+
+                                activeJobs.add(job)
+                            }
+
+                        } catch (e: Exception) {
+
+                            e.printStackTrace()
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+    }
+
+    LaunchedEffect(Unit) {
+
+        FirebaseDatabase.getInstance().reference
+            .child("completedJobs")
+            .child(userId)
+            .addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+
+                    completedJobs.clear()
+
+                    for (jobSnapshot in snapshot.children) {
+
+                        try {
+
+                            val job =
+                                jobSnapshot.getValue(JobModel::class.java)
+
+                            if (job != null) {
+
+                                completedJobs.add(job)
+                            }
+
+                        } catch (e: Exception) {
+
+                            e.printStackTrace()
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+    }
+
     Scaffold(
         modifier = Modifier.statusBarsPadding(), // Added: Pushes the dashboard title below the system clock/status bar
         topBar = {
