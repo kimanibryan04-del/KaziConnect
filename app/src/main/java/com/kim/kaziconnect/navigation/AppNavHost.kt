@@ -22,6 +22,7 @@ import com.kim.kaziconnect.ui.screens.register.RegisterScreen
 import com.kim.kaziconnect.ui.screens.onboarding.RoleSelectionScreen
 import com.kim.kaziconnect.ui.screens.postjob.PostJobScreen
 import com.kim.kaziconnect.ui.screens.profile.FundiProfileScreen
+import com.kim.kaziconnect.ui.screens.review.ReviewScreen
 import com.kim.kaziconnect.ui.screens.splash.SplashScreen
 
 @Composable
@@ -113,6 +114,29 @@ fun AppNavHost(
             ApplicantListScreen(
                 navController = navController,
                 jobId = jobId
+            )
+        }
+        composable(
+
+            route =
+                "$ROUT_REVIEW/{jobId}/{receiverId}/{reviewType}"
+
+        ) { backStackEntry ->
+
+            val jobId =
+                backStackEntry.arguments?.getString("jobId") ?: ""
+
+            val receiverId =
+                backStackEntry.arguments?.getString("receiverId") ?: ""
+
+            val reviewType =
+                backStackEntry.arguments?.getString("reviewType") ?: ""
+
+            ReviewScreen(
+                navController = navController,
+                jobId = jobId,
+                receiverId = receiverId,
+                reviewType = reviewType
             )
         }
 

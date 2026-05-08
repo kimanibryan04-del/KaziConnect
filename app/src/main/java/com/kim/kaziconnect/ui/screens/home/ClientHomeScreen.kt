@@ -1,6 +1,7 @@
 package com.kim.kaziconnect.ui.screens.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -27,11 +28,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import com.kim.kaziconnect.models.JobModel
 import com.kim.kaziconnect.navigation.ROUT_CLIENTGIG
 import com.kim.kaziconnect.navigation.ROUT_CLIENTHOME
 import com.kim.kaziconnect.navigation.ROUT_CLIENTMESSAGES
 import com.kim.kaziconnect.navigation.ROUT_CLIENTNOTIFICATION
 import com.kim.kaziconnect.navigation.ROUT_CLIENTPROFILE
+import com.kim.kaziconnect.navigation.ROUT_JOBDETAILS_NOAPPLY
 import com.kim.kaziconnect.navigation.ROUT_REGISTER
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,12 +44,10 @@ fun ClientHomeScreen(navController: NavHostController) {
     val auth = FirebaseAuth.getInstance()
     val database = FirebaseDatabase.getInstance().reference
 
-    // COLORS
     val colorPrimary = Color(0xFF1B263B)
     val colorAccent = Color(0xFFEE6C4D)
     val lightBg = Color(0xFFF1F4F9)
 
-    // STATES
     var searchText by remember {
         mutableStateOf("")
     }
@@ -55,7 +56,10 @@ fun ClientHomeScreen(navController: NavHostController) {
         mutableStateOf(0)
     }
 
-    // LOAD UNREAD NOTIFICATIONS
+    val ongoingJobs = remember {
+        mutableStateListOf<JobModel>()
+    }
+
     LaunchedEffect(Unit) {
 
         val userId = auth.currentUser?.uid
@@ -81,6 +85,37 @@ fun ClientHomeScreen(navController: NavHostController) {
                     }
 
                     unreadCount = count
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+    }
+
+    LaunchedEffect(Unit) {
+
+        val userId = auth.currentUser?.uid
+            ?: return@LaunchedEffect
+
+        database.child("clientOngoingJobs")
+            .child(userId)
+            .addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+
+                    ongoingJobs.clear()
+
+                    for (jobSnapshot in snapshot.children) {
+
+                        val job =
+                            jobSnapshot.getValue(JobModel::class.java)
+
+                        if (job != null) {
+
+                            ongoingJobs.add(job)
+                        }
+                    }
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -203,7 +238,6 @@ fun ClientHomeScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // HEADER
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -288,7 +322,6 @@ fun ClientHomeScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // SEARCH BAR
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = Color.White,
@@ -340,7 +373,6 @@ fun ClientHomeScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // SERVICES
             Text(
                 "Available Services",
                 fontWeight = FontWeight.ExtraBold,
@@ -391,7 +423,6 @@ fun ClientHomeScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // FEATURED PROVIDERS
             Text(
                 "Featured Providers",
                 fontWeight = FontWeight.ExtraBold,
@@ -428,7 +459,6 @@ fun ClientHomeScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // TASKS
             Text(
                 "My Ongoing Tasks",
                 fontWeight = FontWeight.ExtraBold,
@@ -438,29 +468,105 @@ fun ClientHomeScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White
-                ),
-                shape = RoundedCornerShape(20.dp),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 2.dp
-                )
-            ) {
+            if (ongoingJobs.isEmpty()) {
 
-                Box(
-                    modifier = Modifier
-                        .padding(40.dp)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = 2.dp
+                    )
                 ) {
 
-                    Text(
-                        "No active tasks found",
-                        color = Color.Gray,
-                        fontSize = 14.sp
-                    )
+                    Box(
+                        modifier = Modifier
+                            .padding(40.dp)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+
+                        Text(
+                            "No active tasks found",
+                            color = Color.Gray,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+
+            } else {
+
+                ongoingJobs.forEach { job ->
+
+                    val jobIcon = when (job.category) {
+
+                        "Plumbing" -> Icons.Default.Build
+                        "Electrical" -> Icons.Default.Bolt
+                        "Painting" -> Icons.Default.Brush
+                        "Masonry" -> Icons.Default.Tapas
+                        "Carpentry" -> Icons.Default.Hardware
+                        "Cleaning" -> Icons.Default.LocalLaundryService
+
+                        else -> Icons.Default.Work
+                    }
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp)
+                            .clickable {
+
+                                navController.navigate(
+                                    "${ROUT_JOBDETAILS_NOAPPLY}/${job.id}"
+                                )
+                            },
+
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White
+                        ),
+
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+
+                        Column(
+                            modifier = Modifier.padding(18.dp)
+                        ) {
+
+                            Icon(
+                                imageVector = jobIcon,
+                                contentDescription = null,
+                                tint = colorAccent,
+                                modifier = Modifier.size(28.dp)
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(
+                                text = job.title,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 17.sp,
+                                color = colorPrimary
+                            )
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            Text(
+                                text = job.location,
+                                color = Color.Gray,
+                                fontSize = 13.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(
+                                text = job.budget,
+                                color = colorAccent,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
             }
 

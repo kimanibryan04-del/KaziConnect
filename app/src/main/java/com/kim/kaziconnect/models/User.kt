@@ -1,9 +1,19 @@
 package com.kim.kaziconnect.models
 
 data class User(
-    val uid: String = "",
-    val name: String = "",
-    val email: String = "",
-    val role: String = "", // "client" or "fundi"
-    val isVerified: Boolean = false
+
+    var uid: String = "",
+    var name: String = "",
+    var email: String = "",
+    var role: String = "",
+
+    var isVerified: Boolean = false,
+
+    // NEW
+    var phone: String = "",
+    var skill: String = "",
+
+    var rating: Float = 0f,
+    var reviewCount: Int = 0,
+    var earnings: Double = 0.0
 )

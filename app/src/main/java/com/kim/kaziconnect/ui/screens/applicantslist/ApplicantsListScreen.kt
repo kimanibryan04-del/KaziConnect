@@ -13,14 +13,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
-import com.kim.kaziconnect.models.ApplicantModel
+import com.kim.kaziconnect.models.JobModel
+import com.kim.kaziconnect.models.User
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +37,7 @@ fun ApplicantListScreen(
     val lightBg = Color(0xFFF1F4F9)
 
     val applicants = remember {
-        mutableStateListOf<ApplicantModel>()
+        mutableStateListOf<User>()
     }
 
     LaunchedEffect(Unit) {
@@ -59,11 +62,11 @@ fun ApplicantListScreen(
                             .addOnSuccessListener { userData ->
 
                                 val applicant =
-                                    userData.getValue(ApplicantModel::class.java)
+                                    userData.getValue(User::class.java)
 
                                 if (applicant != null) {
 
-                                    applicant.userId = userId
+                                    applicant.uid = userId
 
                                     applicants.add(applicant)
                                 }
@@ -79,9 +82,11 @@ fun ApplicantListScreen(
 
     Scaffold(
         topBar = {
+
             TopAppBar(
 
                 title = {
+
                     Text(
                         text = "Applicants",
                         fontWeight = FontWeight.Bold,
@@ -169,7 +174,7 @@ fun ApplicantListScreen(
                             ) {
 
                                 Text(
-                                    text = applicant.fullName,
+                                    text = applicant.name,
                                     fontWeight = FontWeight.Bold,
                                     color = colorPrimary,
                                     fontSize = 18.sp
@@ -178,7 +183,7 @@ fun ApplicantListScreen(
                                 Spacer(modifier = Modifier.height(6.dp))
 
                                 Text(
-                                    text = "Skill: ${applicant.skill}",
+                                    text = "Skill: ${applicant.skill.ifEmpty { "Not specified" }}",
                                     color = Color.Gray,
                                     fontSize = 14.sp
                                 )
@@ -186,7 +191,7 @@ fun ApplicantListScreen(
                                 Spacer(modifier = Modifier.height(4.dp))
 
                                 Text(
-                                    text = "Phone: ${applicant.phone}",
+                                    text = "Phone: ${applicant.phone.ifEmpty { "Not added" }}",
                                     color = Color.Gray,
                                     fontSize = 14.sp
                                 )
@@ -207,6 +212,157 @@ fun ApplicantListScreen(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp
                                 )
+
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+
+                                    // ACCEPT BUTTON
+                                    Button(
+
+                                        onClick = {
+
+                                            FirebaseDatabase.getInstance().reference
+                                                .child("jobs")
+                                                .child(jobId)
+                                                .get()
+                                                .addOnSuccessListener { jobSnapshot ->
+
+                                                    val job =
+                                                        jobSnapshot.getValue(
+                                                            JobModel::class.java
+                                                        )
+
+                                                    if (job != null) {
+
+                                                        job.id = jobId
+                                                        job.status = "active"
+                                                        job.fundiId = applicant.uid
+
+                                                        val clientId =
+                                                            FirebaseAuth.getInstance()
+                                                                .currentUser?.uid ?: ""
+
+                                                        // ADD TO FUNDI ACTIVE JOBS
+                                                        FirebaseDatabase.getInstance().reference
+                                                            .child("ongoingJobs")
+                                                            .child(applicant.uid)
+                                                            .child(jobId)
+                                                            .setValue(job)
+
+                                                        // ADD TO CLIENT ACTIVE JOBS
+                                                        FirebaseDatabase.getInstance().reference
+                                                            .child("clientOngoingJobs")
+                                                            .child(clientId)
+                                                            .child(jobId)
+                                                            .setValue(job)
+
+                                                        // UPDATE MAIN JOB
+                                                        FirebaseDatabase.getInstance().reference
+                                                            .child("jobs")
+                                                            .child(jobId)
+                                                            .setValue(job)
+
+                                                            .addOnSuccessListener {
+
+                                                                // SEND ACCEPT NOTIFICATION
+                                                                val notificationId =
+                                                                    FirebaseDatabase.getInstance()
+                                                                        .reference
+                                                                        .push()
+                                                                        .key ?: ""
+
+                                                                val notificationData = mapOf(
+
+                                                                    "title" to "Job Accepted",
+
+                                                                    "message" to
+                                                                            "Your application for ${job.title} was accepted.",
+
+                                                                    "read" to false,
+
+                                                                    "timestamp" to
+                                                                            System.currentTimeMillis()
+                                                                )
+
+                                                                FirebaseDatabase.getInstance()
+                                                                    .reference
+                                                                    .child("notifications")
+                                                                    .child(applicant.uid)
+                                                                    .child(notificationId)
+                                                                    .setValue(notificationData)
+
+                                                                // REMOVE APPLICATIONS
+                                                                FirebaseDatabase.getInstance()
+                                                                    .reference
+                                                                    .child("applications")
+                                                                    .child(jobId)
+                                                                    .removeValue()
+                                                            }
+                                                    }
+                                                }
+                                        },
+
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFF2E7D32)
+                                        )
+                                    ) {
+
+                                        Text("Accept")
+                                    }
+
+                                    // REJECT BUTTON
+                                    OutlinedButton(
+
+                                        onClick = {
+
+                                            FirebaseDatabase.getInstance().reference
+                                                .child("applications")
+                                                .child(jobId)
+                                                .child(applicant.uid)
+                                                .removeValue()
+
+                                            val notificationId =
+                                                FirebaseDatabase.getInstance().reference
+                                                    .child("notifications")
+                                                    .child(applicant.uid)
+                                                    .push()
+                                                    .key ?: ""
+
+                                            val notificationData = mapOf(
+
+                                                "title" to "Application Rejected",
+
+                                                "message" to
+                                                        "Your application was rejected by the client.",
+
+                                                "read" to false,
+
+                                                "timestamp" to
+                                                        System.currentTimeMillis()
+                                            )
+
+                                            FirebaseDatabase.getInstance().reference
+                                                .child("notifications")
+                                                .child(applicant.uid)
+                                                .child(notificationId)
+                                                .setValue(notificationData)
+                                        },
+
+                                        colors = ButtonDefaults.outlinedButtonColors(
+                                            contentColor = Color.Red
+                                        ),
+
+                                        border = ButtonDefaults.outlinedButtonBorder.copy(
+                                            brush = SolidColor(Color.Red)
+                                        )
+                                    ) {
+
+                                        Text("Reject")
+                                    }
+                                }
                             }
                         }
                     }
@@ -219,6 +375,7 @@ fun ApplicantListScreen(
 @Preview(showBackground = true)
 @Composable
 fun ApplicantListScreenPreview() {
+
     ApplicantListScreen(
         navController = rememberNavController(),
         jobId = ""

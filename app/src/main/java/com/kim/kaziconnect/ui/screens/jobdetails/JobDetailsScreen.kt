@@ -8,10 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.Work
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,6 +23,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.kim.kaziconnect.models.JobModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,6 +37,10 @@ fun JobDetailsScreen(
         mutableStateOf(false)
     }
 
+    var isCompleted by remember {
+        mutableStateOf(false)
+    }
+
     val context = LocalContext.current
 
     // COLORS
@@ -46,7 +48,7 @@ fun JobDetailsScreen(
     val colorAccent = Color(0xFFEE6C4D)
     val lightBg = Color(0xFFF1F4F9)
 
-    // TEMP DATA
+    // JOB DATA
     var jobTitle by remember {
         mutableStateOf("")
     }
@@ -63,10 +65,24 @@ fun JobDetailsScreen(
         mutableStateOf("")
     }
 
+    var category by remember {
+        mutableStateOf("")
+    }
+
+    var clientId by remember {
+        mutableStateOf("")
+    }
+
+    var fundiId by remember {
+        mutableStateOf("")
+    }
+
     LaunchedEffect(Unit) {
 
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+        val userId =
+            FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
+        // CHECK IF USER HAS APPLIED
         FirebaseDatabase.getInstance().reference
             .child("applications")
             .child(jobId)
@@ -77,6 +93,7 @@ fun JobDetailsScreen(
                 hasApplied = it.exists()
             }
 
+        // LOAD JOB DETAILS
         FirebaseDatabase.getInstance().reference
             .child("jobs")
             .child(jobId)
@@ -98,25 +115,67 @@ fun JobDetailsScreen(
                 description =
                     snapshot.child("description")
                         .getValue(String::class.java) ?: ""
+
+                category =
+                    snapshot.child("category")
+                        .getValue(String::class.java) ?: ""
+
+                clientId =
+                    snapshot.child("clientId")
+                        .getValue(String::class.java) ?: ""
+
+                fundiId =
+                    snapshot.child("fundiId")
+                        .getValue(String::class.java) ?: ""
+
+                val status =
+                    snapshot.child("status")
+                        .getValue(String::class.java) ?: ""
+
+                isCompleted = status == "completed"
             }
+    }
+
+    // CATEGORY ICON
+    val categoryIcon = when (category) {
+
+        "Plumbing" -> Icons.Default.Build
+
+        "Electrical" -> Icons.Default.Bolt
+
+        "Masonry" -> Icons.Default.HomeRepairService
+
+        "Painting" -> Icons.Default.Brush
+
+        "Carpentry" -> Icons.Default.Handyman
+
+        "Cleaning" -> Icons.Default.CleaningServices
+
+        else -> Icons.Default.Work
     }
 
     Scaffold(
         topBar = {
+
             TopAppBar(
+
                 title = {
+
                     Text(
                         text = "Job Details",
                         fontWeight = FontWeight.Bold,
                         color = colorPrimary
                     )
                 },
+
                 navigationIcon = {
+
                     IconButton(
                         onClick = {
                             navController.popBackStack()
                         }
                     ) {
+
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
@@ -124,6 +183,7 @@ fun JobDetailsScreen(
                         )
                     }
                 },
+
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = lightBg
                 )
@@ -160,12 +220,14 @@ fun JobDetailsScreen(
                         shape = CircleShape,
                         color = colorAccent.copy(alpha = 0.12f)
                     ) {
+
                         Box(
                             modifier = Modifier.size(62.dp),
                             contentAlignment = Alignment.Center
                         ) {
+
                             Icon(
-                                imageVector = Icons.Default.Work,
+                                imageVector = categoryIcon,
                                 contentDescription = null,
                                 tint = colorAccent,
                                 modifier = Modifier.size(30.dp)
@@ -187,6 +249,7 @@ fun JobDetailsScreen(
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+
                         Icon(
                             imageVector = Icons.Default.LocationOn,
                             contentDescription = null,
@@ -208,6 +271,7 @@ fun JobDetailsScreen(
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+
                         Icon(
                             imageVector = Icons.Default.Payments,
                             contentDescription = null,
@@ -229,7 +293,7 @@ fun JobDetailsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // DESCRIPTION
+            // DESCRIPTION TITLE
             Text(
                 text = "Job Description",
                 fontWeight = FontWeight.ExtraBold,
@@ -239,6 +303,7 @@ fun JobDetailsScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            // DESCRIPTION CARD
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
@@ -246,6 +311,7 @@ fun JobDetailsScreen(
                     containerColor = Color.White
                 )
             ) {
+
                 Text(
                     text = description,
                     modifier = Modifier.padding(20.dp),
@@ -257,10 +323,11 @@ fun JobDetailsScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // APPLY SECTION
+            // APPLY BUTTON
             if (!hasApplied && showApplyButton) {
 
                 Button(
+
                     onClick = {
 
                         val userId =
@@ -281,16 +348,19 @@ fun JobDetailsScreen(
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
-
                     },
+
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(58.dp),
+
                     shape = RoundedCornerShape(18.dp),
+
                     colors = ButtonDefaults.buttonColors(
                         containerColor = colorAccent
                     )
                 ) {
+
                     Text(
                         text = "Apply For This Job",
                         fontSize = 16.sp,
@@ -303,17 +373,208 @@ fun JobDetailsScreen(
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
+
                     colors = CardDefaults.cardColors(
                         containerColor = Color(0xFFE8F5E9)
                     ),
+
                     shape = RoundedCornerShape(18.dp)
                 ) {
 
                     Text(
                         text = "Application Sent ✅",
+
                         modifier = Modifier.padding(18.dp),
+
                         color = Color(0xFF2E7D32),
+
                         fontWeight = FontWeight.Bold,
+
+                        fontSize = 15.sp
+                    )
+                }
+            }
+
+            // MARK AS COMPLETE BUTTON
+            if (
+                !showApplyButton &&
+                !isCompleted &&
+                fundiId == FirebaseAuth.getInstance().currentUser?.uid
+            ) {
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Button(
+
+                    onClick = {
+
+                        val database =
+                            FirebaseDatabase.getInstance().reference
+
+                        database.child("jobs")
+                            .child(jobId)
+                            .get()
+                            .addOnSuccessListener { snapshot ->
+
+                                val job =
+                                    snapshot.getValue(JobModel::class.java)
+
+                                if (job != null) {
+
+                                    job.id = jobId
+                                    job.status = "completed"
+
+                                    // UPDATE MAIN JOB
+                                    database.child("jobs")
+                                        .child(jobId)
+                                        .setValue(job)
+
+                                    // SAVE TO FUNDI COMPLETED
+                                    database.child("completedJobs")
+                                        .child(fundiId)
+                                        .child(jobId)
+                                        .setValue(job)
+
+                                    // SAVE TO CLIENT COMPLETED
+                                    database.child("clientCompletedJobs")
+                                        .child(clientId)
+                                        .child(jobId)
+                                        .setValue(job)
+
+                                    // REMOVE FROM ACTIVE
+                                    database.child("ongoingJobs")
+                                        .child(fundiId)
+                                        .child(jobId)
+                                        .removeValue()
+
+                                    database.child("clientOngoingJobs")
+                                        .child(clientId)
+                                        .child(jobId)
+                                        .removeValue()
+
+                                    // =========================
+                                    // UPDATE FUNDI EARNINGS
+                                    // =========================
+
+                                    database.child("users")
+                                        .child(fundiId)
+                                        .child("earnings")
+                                        .get()
+
+                                        .addOnSuccessListener { earningsSnapshot ->
+
+                                            val currentEarnings =
+                                                earningsSnapshot.getValue(Double::class.java)
+                                                    ?: 0.0
+
+                                            val jobAmount =
+                                                budget
+                                                    .replace("Ksh", "")
+                                                    .replace("KES", "")
+                                                    .replace(",", "")
+                                                    .trim()
+                                                    .toDoubleOrNull() ?: 0.0
+
+                                            val newEarnings =
+                                                currentEarnings + jobAmount
+
+                                            // UPDATE USER EARNINGS
+                                            database.child("users")
+                                                .child(fundiId)
+                                                .child("earnings")
+                                                .setValue(newEarnings)
+
+                                            // UPDATE FUNDI STATS EARNINGS
+                                            database.child("fundiStats")
+                                                .child(fundiId)
+                                                .child("earnings")
+                                                .setValue(newEarnings)
+                                        }
+
+                                    // NOTIFY CLIENT
+                                    val notificationId =
+                                        database.push().key ?: ""
+
+                                    val notificationData = mapOf(
+
+                                        "title" to "Job Completed",
+
+                                        "message" to
+                                                "The worker marked \"$jobTitle\" as completed.",
+
+                                        "read" to false,
+
+                                        "timestamp" to
+                                                System.currentTimeMillis()
+                                    )
+
+                                    database.child("notifications")
+                                        .child(clientId)
+                                        .child(notificationId)
+                                        .setValue(notificationData)
+
+                                    isCompleted = true
+
+                                    Toast.makeText(
+                                        context,
+                                        "Job marked as completed",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                    },
+
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(58.dp),
+
+                    shape = RoundedCornerShape(18.dp),
+
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF2E7D32)
+                    )
+                ) {
+
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = Color.White
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = "Mark As Complete",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+            // COMPLETED STATE
+            if (isCompleted) {
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFE8F5E9)
+                    ),
+
+                    shape = RoundedCornerShape(18.dp)
+                ) {
+
+                    Text(
+                        text = "Job Completed ✅",
+
+                        modifier = Modifier.padding(18.dp),
+
+                        color = Color(0xFF2E7D32),
+
+                        fontWeight = FontWeight.Bold,
+
                         fontSize = 15.sp
                     )
                 }
@@ -327,6 +588,7 @@ fun JobDetailsScreen(
 @Preview(showBackground = true)
 @Composable
 fun JobDetailsScreenPreview() {
+
     JobDetailsScreen(
         navController = rememberNavController(),
         jobId = "",

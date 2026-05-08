@@ -2,6 +2,7 @@ package com.kim.kaziconnect.ui.screens.postjob
 
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -46,6 +47,18 @@ fun PostJobScreen(navController: NavHostController) {
     var isLoading by remember { mutableStateOf(false) }
 
     val database = FirebaseDatabase.getInstance().reference
+
+    var selectedCategory by remember {
+        mutableStateOf("Plumbing")
+    }
+    val categories = listOf(
+        "Plumbing",
+        "Electrical",
+        "Masonry",
+        "Painting",
+        "Carpentry",
+        "Cleaning"
+    )
 
     Scaffold(
         topBar = {
@@ -221,6 +234,47 @@ fun PostJobScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            Text(
+                text = "Service Category",
+                fontWeight = FontWeight.Bold,
+                color = colorPrimary,
+                fontSize = 16.sp
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            categories.forEach { category ->
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            selectedCategory = category
+                        }
+                        .padding(vertical = 8.dp),
+
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    RadioButton(
+                        selected = selectedCategory == category,
+                        onClick = {
+                            selectedCategory = category
+                        },
+                        colors = RadioButtonDefaults.colors(
+                            selectedColor = colorAccent
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = category,
+                        color = colorPrimary
+                    )
+                }
+            }
+
             Button(
                 onClick = {
 
@@ -240,7 +294,9 @@ fun PostJobScreen(navController: NavHostController) {
                         "location" to location,
                         "budget" to budget,
                         "clientId" to userId,
-                        "status" to "pending"
+                        "status" to "pending",
+                        "category" to selectedCategory
+
                     )
 
                     FirebaseDatabase.getInstance()

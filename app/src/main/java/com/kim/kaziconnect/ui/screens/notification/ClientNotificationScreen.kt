@@ -26,8 +26,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.kim.kaziconnect.models.NotificationData
 
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientNotificationScreen(navController: NavHostController) {
@@ -251,8 +249,17 @@ fun ClientNotificationScreen(navController: NavHostController) {
 
                                 Spacer(modifier = Modifier.height(10.dp))
 
+                                // FIXED TIME ERROR
                                 Text(
-                                    text = notification.time,
+                                    text =
+                                        if (notification.timestamp != 0L)
+                                            java.text.SimpleDateFormat(
+                                                "dd MMM yyyy, hh:mm a",
+                                                java.util.Locale.getDefault()
+                                            ).format(java.util.Date(notification.timestamp))
+                                        else
+                                            "Just now",
+
                                     color = colorAccent,
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 12.sp

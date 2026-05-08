@@ -250,7 +250,15 @@ fun FundiNotificationScreen(navController: NavHostController) {
                                 Spacer(modifier = Modifier.height(10.dp))
 
                                 Text(
-                                    text = notification.time,
+                                    text =
+                                        if (notification.timestamp != 0L)
+                                            java.text.SimpleDateFormat(
+                                                "dd MMM yyyy, hh:mm a",
+                                                java.util.Locale.getDefault()
+                                            ).format(java.util.Date(notification.timestamp))
+                                        else
+                                            "Just now",
+
                                     color = colorAccent,
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 12.sp

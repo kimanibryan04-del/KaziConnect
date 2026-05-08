@@ -1,13 +1,16 @@
 package com.kim.kaziconnect.ui.screens.gig
 
-import android.R.attr.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,17 +23,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.kim.kaziconnect.navigation.ROUT_CLIENTGIG
-import com.kim.kaziconnect.navigation.ROUT_CLIENTHOME
-import com.kim.kaziconnect.navigation.ROUT_CLIENTMESSAGES
-import com.kim.kaziconnect.navigation.ROUT_CLIENTPROFILE
-import com.kim.kaziconnect.navigation.ROUT_POSTJOB
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.kim.kaziconnect.models.JobModel
 import com.kim.kaziconnect.navigation.ROUT_APPLICANTSLIST
+import com.kim.kaziconnect.navigation.ROUT_CLIENTGIG
+import com.kim.kaziconnect.navigation.ROUT_CLIENTHOME
+import com.kim.kaziconnect.navigation.ROUT_CLIENTMESSAGES
+import com.kim.kaziconnect.navigation.ROUT_CLIENTPROFILE
+import com.kim.kaziconnect.navigation.ROUT_JOBDETAILS_NOAPPLY
+import com.kim.kaziconnect.navigation.ROUT_POSTJOB
+import com.kim.kaziconnect.navigation.ROUT_REVIEW
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,7 +43,9 @@ fun ClientGigScreen(navController: NavHostController) {
     val colorAccent = Color(0xFFEE6C4D)
     val lightBg = Color(0xFFF1F4F9)
 
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by remember {
+        mutableIntStateOf(0)
+    }
 
     val tabs = listOf(
         "Active",
@@ -48,14 +53,20 @@ fun ClientGigScreen(navController: NavHostController) {
         "Completed"
     )
 
-    val activeJobs = remember { mutableStateListOf<JobModel>() }
+    val activeJobs = remember {
+        mutableStateListOf<JobModel>()
+    }
 
-    val pendingJobs = remember { mutableStateListOf<JobModel>() }
+    val pendingJobs = remember {
+        mutableStateListOf<JobModel>()
+    }
 
-    val completedJobs = remember { mutableStateListOf<JobModel>() }
+    val completedJobs = remember {
+        mutableStateListOf<JobModel>()
+    }
 
-
-    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    val userId =
+        FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
     LaunchedEffect(Unit) {
 
@@ -77,6 +88,8 @@ fun ClientGigScreen(navController: NavHostController) {
                                 jobSnapshot.getValue(JobModel::class.java)
 
                             if (job != null) {
+
+                                job.id = jobSnapshot.key ?: ""
 
                                 if (job.clientId == userId) {
 
@@ -319,6 +332,7 @@ fun ClientGigScreen(navController: NavHostController) {
                 .padding(paddingValues)
                 .background(lightBg)
         ) {
+
             if (jobsList.isEmpty()) {
 
                 when (selectedTab) {
@@ -353,19 +367,41 @@ fun ClientGigScreen(navController: NavHostController) {
 
                     items(jobsList) { job ->
 
+                        val jobIcon = when (job.category) {
+
+                            "Plumbing" -> Icons.Default.Build
+                            "Electrical" -> Icons.Default.Bolt
+                            "Painting" -> Icons.Default.Brush
+                            "Masonry" -> Icons.Default.Tapas
+                            "Carpentry" -> Icons.Default.Hardware
+                            "Cleaning" -> Icons.Default.LocalLaundryService
+
+                            else -> Icons.Default.Work
+                        }
+
                         Card(
 
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
 
-                                    navController.navigate(
-                                        "${ROUT_APPLICANTSLIST}/${job.id}"
-                                    )
+                                    // PENDING TAB -> OPEN APPLICANTS
+                                    if (selectedTab == 1) {
+
+                                        navController.navigate(
+                                            "${ROUT_APPLICANTSLIST}/${job.id}"
+                                        )
+
+                                    }
+
+                                    // ACTIVE + COMPLETED -> OPEN JOB DETAILS
+                                    else {
+
+                                        navController.navigate(
+                                            "${ROUT_JOBDETAILS_NOAPPLY}/${job.id}"
+                                        )
+                                    }
                                 },
-
-
-
 
                             colors = CardDefaults.cardColors(
                                 containerColor = Color.White
@@ -378,6 +414,15 @@ fun ClientGigScreen(navController: NavHostController) {
                             Column(
                                 modifier = Modifier.padding(16.dp)
                             ) {
+
+                                Icon(
+                                    imageVector = jobIcon,
+                                    contentDescription = null,
+                                    tint = colorAccent,
+                                    modifier = Modifier.size(28.dp)
+                                )
+
+                                Spacer(modifier = Modifier.height(10.dp))
 
                                 Text(
                                     text = job.title,
@@ -401,13 +446,105 @@ fun ClientGigScreen(navController: NavHostController) {
                                     color = colorAccent,
                                     fontWeight = FontWeight.Black
                                 )
+
+                                // REVIEW SECTION
+                                if (job.status == "completed") {
+
+                                    Spacer(modifier = Modifier.height(14.dp))
+
+                                    if (!job.clientReviewed) {
+
+                                        Button(
+
+                                            onClick = {
+
+                                                navController.navigate(
+                                                    "${ROUT_REVIEW}/${job.id}/${job.fundiId}/client_to_fundi"
+                                                )
+                                            },
+
+                                            modifier = Modifier.fillMaxWidth(),
+
+                                            shape = RoundedCornerShape(14.dp),
+
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = colorAccent
+                                            )
+                                        ) {
+
+                                            Icon(
+                                                imageVector = Icons.Default.Star,
+                                                contentDescription = null,
+                                                tint = Color.White
+                                            )
+
+                                            Spacer(modifier = Modifier.width(8.dp))
+
+                                            Text(
+                                                text = "Review Fundi",
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+
+                                    } else {
+
+                                        Card(
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = Color(0xFFE8F5E9)
+                                            )
+                                        ) {
+
+                                            Text(
+                                                text = "✅ You already reviewed this fundi",
+
+                                                modifier = Modifier.padding(12.dp),
+
+                                                color = Color(0xFF2E7D32),
+
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 13.sp
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(10.dp))
+
+                                    Card(
+                                        colors = CardDefaults.cardColors(
+                                            containerColor =
+                                                if (job.fundiReviewed)
+                                                    Color(0xFFE8F5E9)
+                                                else
+                                                    Color(0xFFFFF3E0)
+                                        )
+                                    ) {
+
+                                        Text(
+                                            text =
+                                                if (job.fundiReviewed)
+                                                    "⭐ Fundi has reviewed you"
+                                                else
+                                                    "⏳ Waiting for fundi review",
+
+                                            modifier = Modifier.padding(12.dp),
+
+                                            color =
+                                                if (job.fundiReviewed)
+                                                    Color(0xFF2E7D32)
+                                                else
+                                                    Color(0xFFE65100),
+
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
-
-
 
             FloatingActionButton(
 
