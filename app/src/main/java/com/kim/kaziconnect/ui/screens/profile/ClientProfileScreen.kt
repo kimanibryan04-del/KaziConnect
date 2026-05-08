@@ -1,6 +1,7 @@
 package com.kim.kaziconnect.ui.screens.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -12,20 +13,27 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import com.kim.kaziconnect.navigation.ROUT_CLIENTEDITPROFILE
 import com.kim.kaziconnect.navigation.ROUT_CLIENTGIG
 import com.kim.kaziconnect.navigation.ROUT_CLIENTHOME
 import com.kim.kaziconnect.navigation.ROUT_CLIENTMESSAGES
+import com.kim.kaziconnect.navigation.ROUT_CLIENTNOTIFICATION
 import com.kim.kaziconnect.navigation.ROUT_CLIENTPROFILE
+import com.kim.kaziconnect.navigation.ROUT_PAYMENTMETHOD
+import com.kim.kaziconnect.navigation.ROUT_REGISTER
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,6 +56,10 @@ fun ClientProfileScreen(navController: NavHostController) {
 
     var rating by remember {
         mutableDoubleStateOf(0.0)
+    }
+
+    var profileImage by remember {
+        mutableStateOf("")
     }
 
     var jobsRequested by remember {
@@ -75,6 +87,10 @@ fun ClientProfileScreen(navController: NavHostController) {
                     rating =
                         snapshot.child("rating")
                             .getValue(Double::class.java) ?: 0.0
+
+                    profileImage =
+                        snapshot.child("profileImage")
+                            .getValue(String::class.java) ?: ""
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -269,18 +285,32 @@ fun ClientProfileScreen(navController: NavHostController) {
 
                 Spacer(Modifier.height(30.dp))
 
-                Surface(
-                    modifier = Modifier.size(120.dp),
-                    shape = CircleShape,
-                    color = Color(0xFFDDE2E9)
-                ) {
+                if (profileImage.isNotEmpty()) {
 
-                    Icon(
-                        Icons.Default.Person,
+                    AsyncImage(
+                        model = profileImage,
                         contentDescription = null,
-                        modifier = Modifier.padding(25.dp),
-                        tint = colorPrimary
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
                     )
+
+                } else {
+
+                    Surface(
+                        modifier = Modifier.size(120.dp),
+                        shape = CircleShape,
+                        color = Color(0xFFDDE2E9)
+                    ) {
+
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = null,
+                            modifier = Modifier.padding(25.dp),
+                            tint = colorPrimary
+                        )
+                    }
                 }
 
                 Spacer(Modifier.height(16.dp))
@@ -317,7 +347,7 @@ fun ClientProfileScreen(navController: NavHostController) {
 
                     ProfileMetricCard(
                         data = MetricData(
-                            label = "Jobs Requested",
+                            label = "Jobs Posted",
                             value = jobsRequested.toString(),
                             icon = Icons.Default.History,
                             color = colorAccent
@@ -334,34 +364,30 @@ fun ClientProfileScreen(navController: NavHostController) {
                 ProfileGroup(title = "Account Settings") {
 
                     ProfileItem(
-                        "Personal Information",
-                        Icons.Outlined.Badge
+                        text = "Personal Information",
+                        icon = Icons.Outlined.Badge,
+                        onClick = {
+                            navController.navigate(ROUT_CLIENTEDITPROFILE)
+                        }
                     )
 
                     ProfileItem(
-                        "Payment Methods",
-                        Icons.Outlined.Payments
+                        text = "Payment Methods",
+                        icon = Icons.Outlined.Payments,
+                        onClick = {
+                            navController.navigate(ROUT_PAYMENTMETHOD)
+                        }
                     )
                 }
 
                 ProfileGroup(title = "Preferences") {
 
                     ProfileItem(
-                        "Notifications",
-                        Icons.Outlined.Notifications
-                    )
-
-                    ProfileItem(
-                        "App Theme",
-                        Icons.Outlined.DarkMode
-                    )
-                }
-
-                ProfileGroup(title = "Support") {
-
-                    ProfileItem(
-                        "Help Center",
-                        Icons.Outlined.HelpOutline
+                        text = "Notifications",
+                        icon = Icons.Outlined.Notifications,
+                        onClick = {
+                            navController.navigate(ROUT_CLIENTNOTIFICATION)
+                        }
                     )
                 }
 
@@ -370,9 +396,18 @@ fun ClientProfileScreen(navController: NavHostController) {
                 ) {
 
                     ProfileItem(
-                        "Logout",
-                        Icons.Outlined.Logout,
-                        iconColor = Color.Red
+                        text = "Logout",
+                        icon = Icons.Outlined.Logout,
+                        iconColor = Color.Red,
+                        onClick = {
+
+                            FirebaseAuth.getInstance().signOut()
+
+                            navController.navigate(ROUT_REGISTER) {
+
+                                popUpTo(0)
+                            }
+                        }
                     )
                 }
 
@@ -469,14 +504,18 @@ fun ProfileGroup(
 fun ProfileItem(
     text: String,
     icon: ImageVector,
-    iconColor: Color = Color(0xFF1B263B)
+    iconColor: Color = Color(0xFF1B263B),
+    onClick: () -> Unit
 ) {
 
     Card(
 
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 4.dp)
+            .clickable {
+                onClick()
+            },
 
         shape = RoundedCornerShape(16.dp),
 

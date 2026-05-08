@@ -1,11 +1,9 @@
 package com.kim.kaziconnect.ui.screens.postjob
 
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -24,16 +22,17 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
+import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
-import com.kim.kaziconnect.models.JobModel
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PostJobScreen(navController: NavHostController) {
+fun PostJobScreen(
+    navController: NavController,
+    category: String = ""
+) {
 
     val colorPrimary = Color(0xFF1B263B)
     val colorAccent = Color(0xFFEE6C4D)
@@ -46,11 +45,6 @@ fun PostJobScreen(navController: NavHostController) {
 
     var isLoading by remember { mutableStateOf(false) }
 
-    val database = FirebaseDatabase.getInstance().reference
-
-    var selectedCategory by remember {
-        mutableStateOf("Plumbing")
-    }
     val categories = listOf(
         "Plumbing",
         "Electrical",
@@ -59,6 +53,14 @@ fun PostJobScreen(navController: NavHostController) {
         "Carpentry",
         "Cleaning"
     )
+
+    var selectedCategory by remember {
+
+        mutableStateOf(
+            if (category.isNotEmpty()) category
+            else categories.first()
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -120,6 +122,79 @@ fun PostJobScreen(navController: NavHostController) {
             )
 
             Spacer(modifier = Modifier.height(28.dp))
+
+            if (category.isNotEmpty()) {
+
+                OutlinedTextField(
+                    value = selectedCategory,
+                    onValueChange = {},
+                    label = {
+                        Text("Service Category")
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Work,
+                            contentDescription = null,
+                            tint = colorAccent
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    singleLine = true,
+                    readOnly = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = colorAccent,
+                        unfocusedBorderColor = Color.LightGray,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    )
+                )
+
+            } else {
+
+                Text(
+                    text = "Service Category",
+                    fontWeight = FontWeight.Bold,
+                    color = colorPrimary,
+                    fontSize = 16.sp
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                categories.forEach { item ->
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                selectedCategory = item
+                            }
+                            .padding(vertical = 8.dp),
+
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        RadioButton(
+                            selected = selectedCategory == item,
+                            onClick = {
+                                selectedCategory = item
+                            },
+                            colors = RadioButtonDefaults.colors(
+                                selectedColor = colorAccent
+                            )
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Text(
+                            text = item,
+                            color = colorPrimary
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
 
             // TITLE
             OutlinedTextField(
@@ -234,49 +309,10 @@ fun PostJobScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            Text(
-                text = "Service Category",
-                fontWeight = FontWeight.Bold,
-                color = colorPrimary,
-                fontSize = 16.sp
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            categories.forEach { category ->
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            selectedCategory = category
-                        }
-                        .padding(vertical = 8.dp),
-
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-
-                    RadioButton(
-                        selected = selectedCategory == category,
-                        onClick = {
-                            selectedCategory = category
-                        },
-                        colors = RadioButtonDefaults.colors(
-                            selectedColor = colorAccent
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text(
-                        text = category,
-                        color = colorPrimary
-                    )
-                }
-            }
-
             Button(
                 onClick = {
+
+                    isLoading = true
 
                     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
@@ -306,6 +342,7 @@ fun PostJobScreen(navController: NavHostController) {
                         .setValue(jobData)
                         .addOnSuccessListener {
 
+                            isLoading = false
                             navController.popBackStack()
                         }
                 },
@@ -347,5 +384,8 @@ fun PostJobScreen(navController: NavHostController) {
 @Preview(showBackground = true)
 @Composable
 fun PostJobScreenPreview() {
-    PostJobScreen(rememberNavController())
+    PostJobScreen(
+        navController = rememberNavController(),
+        category = "Plumbing"
+    )
 }

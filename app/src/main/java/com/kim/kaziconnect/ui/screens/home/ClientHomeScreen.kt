@@ -35,6 +35,7 @@ import com.kim.kaziconnect.navigation.ROUT_CLIENTMESSAGES
 import com.kim.kaziconnect.navigation.ROUT_CLIENTNOTIFICATION
 import com.kim.kaziconnect.navigation.ROUT_CLIENTPROFILE
 import com.kim.kaziconnect.navigation.ROUT_JOBDETAILS_NOAPPLY
+import com.kim.kaziconnect.navigation.ROUT_POSTJOB
 import com.kim.kaziconnect.navigation.ROUT_REGISTER
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -374,7 +375,7 @@ fun ClientHomeScreen(navController: NavHostController) {
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                "Available Services",
+                "Choose a service to get started",
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 18.sp,
                 color = colorPrimary
@@ -411,49 +412,17 @@ fun ClientHomeScreen(navController: NavHostController) {
                     rowItems.forEach { (name, icon, bg) ->
 
                         ServiceCard(
-                            name,
-                            icon,
-                            bg,
-                            colorPrimary,
-                            Modifier.weight(1f)
+                            name = name,
+                            icon = icon,
+                            iconBg = bg,
+                            primaryColor = colorPrimary,
+                            modifier = Modifier.weight(1f),
+
+                            onClick = {
+                                navController.navigate("$ROUT_POSTJOB/$name")
+                            }
                         )
                     }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                "Featured Providers",
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 18.sp,
-                color = colorPrimary
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(140.dp),
-                contentAlignment = Alignment.Center
-            ) {
-
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-
-                    CircularProgressIndicator(
-                        color = colorAccent,
-                        strokeWidth = 3.dp,
-                        modifier = Modifier.size(32.dp)
-                    )
-
-                    Spacer(Modifier.height(12.dp))
-
-                    Text(
-                        "Searching for experts...",
-                        color = Color.Gray,
-                        fontSize = 13.sp
-                    )
                 }
             }
 
@@ -581,11 +550,17 @@ fun ServiceCard(
     icon: ImageVector,
     iconBg: Color,
     primaryColor: Color,
-    modifier: Modifier
+    modifier: Modifier,
+    onClick: () -> Unit
 ) {
 
     Surface(
-        modifier = modifier.aspectRatio(1f),
+        modifier = modifier
+            .aspectRatio(1f)
+            .clickable {
+                onClick()
+            },
+
         shape = RoundedCornerShape(24.dp),
         color = Color.White,
         shadowElevation = 4.dp
@@ -601,21 +576,22 @@ fun ServiceCard(
                 modifier = Modifier
                     .size(56.dp)
                     .background(iconBg, CircleShape),
+
                 contentAlignment = Alignment.Center
             ) {
 
                 Icon(
-                    icon,
-                    null,
+                    imageVector = icon,
+                    contentDescription = null,
                     tint = primaryColor,
                     modifier = Modifier.size(26.dp)
                 )
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                name,
+                text = name,
                 fontWeight = FontWeight.Bold,
                 color = primaryColor,
                 fontSize = 14.sp

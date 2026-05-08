@@ -1,23 +1,38 @@
 package com.kim.kaziconnect.ui.screens.messages
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.*
+import com.kim.kaziconnect.models.ChatModel
+import com.kim.kaziconnect.navigation.ROUT_CHAT
 import com.kim.kaziconnect.navigation.ROUT_CLIENTGIG
 import com.kim.kaziconnect.navigation.ROUT_CLIENTHOME
 import com.kim.kaziconnect.navigation.ROUT_CLIENTMESSAGES
@@ -26,137 +41,511 @@ import com.kim.kaziconnect.navigation.ROUT_CLIENTPROFILE
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientMessagesScreen(navController: NavHostController) {
-    // Branding Colors matching Kaziconnect Identity
-    val colorPrimary = Color(0xFF1B263B) // Cobalt Blue
-    val colorAccent = Color(0xFFEE6C4D)  // Vibrant Orange
-    val lightBg = Color(0xFFF1F4F9)
+
+    val colorPrimary = Color(0xFF1B263B)
+    val deepCobalt = Color(0xFF0D1B2A)
+    val cobaltLight = Color(0xFF243B55)
+    val colorAccent = Color(0xFFEE6C4D)
+    val lightBg = Color(0xFFF4F7FB)
+
+    val currentUserId =
+        FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
+    val chatsList = remember {
+        mutableStateListOf<Pair<ChatModel, String>>()
+    }
+
+    /*
+    UNREAD MESSAGE BADGE
+     */
+
+    var hasUnreadMessages by remember {
+        mutableStateOf(false)
+    }
+
+    LaunchedEffect(Unit) {
+
+        FirebaseDatabase.getInstance().reference
+            .child("chats")
+            .addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+
+                    chatsList.clear()
+
+                    hasUnreadMessages = false
+
+                    for (chatSnapshot in snapshot.children) {
+
+                        val chat =
+                            chatSnapshot.getValue(ChatModel::class.java)
+
+                        if (
+                            chat != null &&
+                            chat.participants.containsKey(currentUserId)
+                        ) {
+
+                            val unread =
+                                chatSnapshot.child("unreadCount")
+                                    .child(currentUserId)
+                                    .getValue(Int::class.java) ?: 0
+
+                            if (unread > 0) {
+                                hasUnreadMessages = true
+                            }
+
+                            val otherUserId =
+                                chat.participants.keys.firstOrNull {
+                                    it != currentUserId
+                                } ?: ""
+
+                            FirebaseDatabase.getInstance().reference
+                                .child("users")
+                                .child(otherUserId)
+                                .get()
+                                .addOnSuccessListener { userSnapshot ->
+
+                                    val otherUserName =
+                                        userSnapshot.child("name")
+                                            .getValue(String::class.java)
+                                            ?: userSnapshot.child("fullName")
+                                                .getValue(String::class.java)
+                                            ?: "User"
+
+                                    chatsList.add(
+                                        Pair(chat, otherUserName)
+                                    )
+                                }
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+    }
 
     Scaffold(
+
+        containerColor = lightBg,
+
         topBar = {
+
             CenterAlignedTopAppBar(
+
                 title = {
-                    Text("Messages", fontWeight = FontWeight.Black, color = colorPrimary)
+
+                    Text(
+                        text = "Messages",
+                        fontWeight = FontWeight.Black,
+                        color = colorPrimary
+                    )
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color.White
+                )
             )
         },
+
         bottomBar = {
+
             NavigationBar(
                 containerColor = Color.White,
                 tonalElevation = 8.dp
             ) {
+
                 NavigationBarItem(
-                    icon = { Icon(Icons.Outlined.Home, contentDescription = "Home") },
-                    label = { Text("Home") },
+
+                    icon = {
+
+                        Icon(
+                            Icons.Outlined.Home,
+                            contentDescription = "Home"
+                        )
+                    },
+
+                    label = {
+                        Text("Home")
+                    },
+
                     selected = false,
-                    onClick = {  navController.navigate(ROUT_CLIENTHOME) {
-                        launchSingleTop = true
-                    } },
+
+                    onClick = {
+
+                        navController.navigate(ROUT_CLIENTHOME) {
+                            launchSingleTop = true
+                        }
+                    },
+
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
-                        indicatorColor = Color.Transparent
-                    )
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Filled.List, contentDescription = "Gigs") },
-                    label = { Text("Gigs") },
-                    selected = false,
-                    onClick = { navController.navigate(ROUT_CLIENTGIG) {
-                        launchSingleTop = true
-                    } },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = colorAccent,
-                        selectedTextColor = colorAccent,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
-                        indicatorColor = Color.Transparent
-                    )
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Outlined.Person, contentDescription = "Profile") },
-                    label = { Text("Profile") },
-                    selected = false,
-                    onClick = {navController.navigate(ROUT_CLIENTPROFILE) {
-                        launchSingleTop = true
-                    } },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = colorAccent,
-                        selectedTextColor = colorAccent,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
                         indicatorColor = Color.Transparent
                     )
                 )
 
                 NavigationBarItem(
-                    icon = { Icon(Icons.Outlined.Email, contentDescription = "Messages") },
-                    label = { Text("Messages") },
-                    selected = true,
-                    onClick = { navController.navigate(ROUT_CLIENTMESSAGES) {
-                        launchSingleTop = true
-                    } },
+
+                    icon = {
+
+                        Icon(
+                            Icons.Filled.List,
+                            contentDescription = "Gigs"
+                        )
+                    },
+
+                    label = {
+                        Text("Gigs")
+                    },
+
+                    selected = false,
+
+                    onClick = {
+
+                        navController.navigate(ROUT_CLIENTGIG) {
+                            launchSingleTop = true
+                        }
+                    },
+
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
+                        indicatorColor = Color.Transparent
+                    )
+                )
+
+                NavigationBarItem(
+
+                    icon = {
+
+                        Icon(
+                            Icons.Outlined.Person,
+                            contentDescription = "Profile"
+                        )
+                    },
+
+                    label = {
+                        Text("Profile")
+                    },
+
+                    selected = false,
+
+                    onClick = {
+
+                        navController.navigate(ROUT_CLIENTPROFILE) {
+                            launchSingleTop = true
+                        }
+                    },
+
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = colorAccent,
+                        selectedTextColor = colorAccent,
+                        indicatorColor = Color.Transparent
+                    )
+                )
+
+                NavigationBarItem(
+
+                    icon = {
+
+                        BadgedBox(
+
+                            badge = {
+
+                                if (hasUnreadMessages) {
+
+                                    Badge(
+                                        containerColor = colorAccent
+                                    )
+                                }
+                            }
+                        ) {
+
+                            Icon(
+                                Icons.Outlined.Email,
+                                contentDescription = "Messages"
+                            )
+                        }
+                    },
+
+                    label = {
+                        Text("Messages")
+                    },
+
+                    selected = true,
+
+                    onClick = {
+
+                        navController.navigate(ROUT_CLIENTMESSAGES) {
+                            launchSingleTop = true
+                        }
+                    },
+
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = colorAccent,
+                        selectedTextColor = colorAccent,
                         indicatorColor = Color.Transparent
                     )
                 )
             }
         }
+
     ) { paddingValues ->
+
         Box(
+
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .background(lightBg)
         ) {
-            // Empty state for testing - No data yet
-            EmptyMessagesView(
-                message = "No conversations yet",
-                icon = Icons.Outlined.QuestionAnswer
-            )
-        }
-    }
-}
 
-@Composable
-fun EmptyMessagesView(message: String, icon: ImageVector) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(80.dp),
-            tint = Color.LightGray.copy(alpha = 0.6f)
-        )
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = message,
-            color = Color.Gray,
-            fontWeight = FontWeight.Medium,
-            fontSize = 18.sp
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = "Your chats with service providers will appear here.",
-            color = Color.LightGray,
-            fontSize = 14.sp,
-            modifier = Modifier.padding(horizontal = 40.dp),
-            textAlign = TextAlign.Center
-        )
+            /*
+            BACKGROUND DECOR
+             */
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+
+                Box(
+                    modifier = Modifier
+                        .size(300.dp)
+                        .offset(x = (-120).dp, y = (-80).dp)
+                        .background(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    deepCobalt.copy(alpha = 0.10f),
+                                    Color.Transparent
+                                )
+                            ),
+                            shape = CircleShape
+                        )
+                )
+
+                Box(
+                    modifier = Modifier
+                        .size(220.dp)
+                        .align(Alignment.CenterEnd)
+                        .offset(x = 100.dp)
+                        .background(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    cobaltLight.copy(alpha = 0.07f),
+                                    Color.Transparent
+                                )
+                            ),
+                            shape = CircleShape
+                        )
+                )
+
+                Box(
+                    modifier = Modifier
+                        .size(260.dp)
+                        .align(Alignment.BottomStart)
+                        .offset(x = (-90).dp, y = 90.dp)
+                        .background(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    colorAccent.copy(alpha = 0.06f),
+                                    Color.Transparent
+                                )
+                            ),
+                            shape = CircleShape
+                        )
+                )
+            }
+
+            if (chatsList.isEmpty()) {
+
+                Column(
+
+                    modifier = Modifier.fillMaxSize(),
+
+                    verticalArrangement = Arrangement.Center,
+
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    Surface(
+
+                        shape = CircleShape,
+
+                        color = colorAccent.copy(alpha = 0.12f)
+                    ) {
+
+                        Icon(
+                            imageVector = Icons.Default.Email,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .padding(22.dp)
+                                .size(44.dp),
+                            tint = colorAccent
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    Text(
+                        text = "No conversations yet",
+                        color = colorPrimary,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = "Your chats with fundis will appear here",
+                        color = Color.Gray,
+                        fontSize = 14.sp
+                    )
+                }
+
+            } else {
+
+                LazyColumn(
+
+                    modifier = Modifier.fillMaxSize(),
+
+                    contentPadding = PaddingValues(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 18.dp,
+                        bottom = 18.dp
+                    ),
+
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+
+                    items(chatsList) { (chat, otherUserName) ->
+
+                        val otherUserId =
+                            chat.participants.keys.firstOrNull {
+                                it != currentUserId
+                            } ?: ""
+
+                        Card(
+
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+
+                                    navController.navigate(
+                                        "$ROUT_CHAT/${chat.chatId}/$otherUserId/$otherUserName"
+                                    )
+                                },
+
+                            shape = RoundedCornerShape(22.dp),
+
+                            elevation = CardDefaults.cardElevation(
+                                defaultElevation = 3.dp
+                            ),
+
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.White
+                            )
+                        ) {
+
+                            Row(
+
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+
+                                Box(
+
+                                    modifier = Modifier
+                                        .size(58.dp)
+                                        .clip(CircleShape)
+                                        .background(
+
+                                            brush = Brush.linearGradient(
+                                                listOf(
+                                                    colorAccent,
+                                                    Color(0xFFFF8A65)
+                                                )
+                                            )
+                                        ),
+
+                                    contentAlignment = Alignment.Center
+                                ) {
+
+                                    Text(
+                                        text = otherUserName
+                                            .take(1)
+                                            .uppercase(),
+
+                                        color = Color.White,
+
+                                        fontWeight = FontWeight.Bold,
+
+                                        fontSize = 22.sp
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(14.dp))
+
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ) {
+
+                                    Text(
+                                        text = otherUserName,
+                                        fontWeight = FontWeight.Bold,
+                                        color = colorPrimary,
+                                        fontSize = 17.sp
+                                    )
+
+                                    Spacer(modifier = Modifier.height(5.dp))
+
+                                    Text(
+                                        text = chat.lastMessage,
+                                        color = Color.Gray,
+                                        fontSize = 14.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+
+                                /*
+                                UNREAD DOT
+                                 */
+
+                                val unreadCount =
+                                    chat.unreadCount[currentUserId] ?: 0
+
+                                if (unreadCount > 0) {
+
+                                    Spacer(modifier = Modifier.width(8.dp))
+
+                                    Box(
+                                        modifier = Modifier
+                                            .size(10.dp)
+                                            .clip(CircleShape)
+                                            .background(colorAccent)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun ClientMessagesScreenPreview() {
-    ClientMessagesScreen(rememberNavController())
+
+    ClientMessagesScreen(
+        navController = rememberNavController()
+    )
 }

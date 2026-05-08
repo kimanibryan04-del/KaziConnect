@@ -9,9 +9,13 @@ data class User(
 
     var isVerified: Boolean = false,
 
-    // NEW
     var phone: String = "",
     var skill: String = "",
+
+    var location: String = "",
+    var bio: String = "",
+
+    var profileImage: String = "",
 
     var rating: Float = 0f,
     var reviewCount: Int = 0,

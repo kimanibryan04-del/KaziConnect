@@ -76,6 +76,8 @@ dependencies {
     // Add the dependencies for any other desired Firebase products
     // https://firebase.google.com/docs/android/setup#available-libraries
     implementation("com.google.firebase:firebase-database-ktx:20.3.0")
+
+    implementation("io.coil-kt:coil-compose:2.6.0")
 }
 
 

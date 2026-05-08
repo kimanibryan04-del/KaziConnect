@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,6 +25,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.kim.kaziconnect.models.JobModel
 import com.kim.kaziconnect.models.User
+import com.kim.kaziconnect.navigation.ROUT_CHAT
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -213,11 +215,53 @@ fun ApplicantListScreen(
                                     fontSize = 15.sp
                                 )
 
-                                Spacer(modifier = Modifier.height(14.dp))
+                                Spacer(modifier = Modifier.height(18.dp))
 
                                 Row(
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
+
+                                    // MESSAGE BUTTON
+                                    OutlinedButton(
+
+                                        onClick = {
+
+                                            val currentUserId =
+                                                FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
+                                            val chatId =
+                                                if (currentUserId < applicant.uid)
+                                                    "${currentUserId}_${applicant.uid}"
+                                                else
+                                                    "${applicant.uid}_${currentUserId}"
+
+                                            navController.navigate(
+                                                "$ROUT_CHAT/$chatId/${applicant.uid}/${applicant.name}"
+                                            )
+
+                                        },
+
+                                        modifier = Modifier.weight(1f),
+
+                                        colors = ButtonDefaults.outlinedButtonColors(
+                                            contentColor = colorAccent
+                                        ),
+
+                                        border = ButtonDefaults.outlinedButtonBorder.copy(
+                                            brush = SolidColor(colorAccent)
+                                        )
+                                    ) {
+
+                                        Icon(
+                                            imageVector = Icons.Default.Chat,
+                                            contentDescription = null
+                                        )
+
+                                        Spacer(modifier = Modifier.width(6.dp))
+
+                                        Text("Message")
+                                    }
 
                                     // ACCEPT BUTTON
                                     Button(
@@ -278,8 +322,7 @@ fun ApplicantListScreen(
 
                                                                     "title" to "Job Accepted",
 
-                                                                    "message" to
-                                                                            "Your application for ${job.title} was accepted.",
+                                                                    "message" to "Your application for ${job.title} was accepted.",
 
                                                                     "read" to false,
 
@@ -305,6 +348,8 @@ fun ApplicantListScreen(
                                                 }
                                         },
 
+                                        modifier = Modifier.weight(1f),
+
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = Color(0xFF2E7D32)
                                         )
@@ -312,56 +357,60 @@ fun ApplicantListScreen(
 
                                         Text("Accept")
                                     }
+                                }
 
-                                    // REJECT BUTTON
-                                    OutlinedButton(
+                                Spacer(modifier = Modifier.height(10.dp))
 
-                                        onClick = {
+                                // REJECT BUTTON
+                                OutlinedButton(
 
-                                            FirebaseDatabase.getInstance().reference
-                                                .child("applications")
-                                                .child(jobId)
-                                                .child(applicant.uid)
-                                                .removeValue()
+                                    onClick = {
 
-                                            val notificationId =
-                                                FirebaseDatabase.getInstance().reference
-                                                    .child("notifications")
-                                                    .child(applicant.uid)
-                                                    .push()
-                                                    .key ?: ""
+                                        FirebaseDatabase.getInstance().reference
+                                            .child("applications")
+                                            .child(jobId)
+                                            .child(applicant.uid)
+                                            .removeValue()
 
-                                            val notificationData = mapOf(
-
-                                                "title" to "Application Rejected",
-
-                                                "message" to
-                                                        "Your application was rejected by the client.",
-
-                                                "read" to false,
-
-                                                "timestamp" to
-                                                        System.currentTimeMillis()
-                                            )
-
+                                        val notificationId =
                                             FirebaseDatabase.getInstance().reference
                                                 .child("notifications")
                                                 .child(applicant.uid)
-                                                .child(notificationId)
-                                                .setValue(notificationData)
-                                        },
+                                                .push()
+                                                .key ?: ""
 
-                                        colors = ButtonDefaults.outlinedButtonColors(
-                                            contentColor = Color.Red
-                                        ),
+                                        val notificationData = mapOf(
 
-                                        border = ButtonDefaults.outlinedButtonBorder.copy(
-                                            brush = SolidColor(Color.Red)
+                                            "title" to "Application Rejected",
+
+                                            "message" to
+                                                    "Your application was rejected by the client.",
+
+                                            "read" to false,
+
+                                            "timestamp" to
+                                                    System.currentTimeMillis()
                                         )
-                                    ) {
 
-                                        Text("Reject")
-                                    }
+                                        FirebaseDatabase.getInstance().reference
+                                            .child("notifications")
+                                            .child(applicant.uid)
+                                            .child(notificationId)
+                                            .setValue(notificationData)
+                                    },
+
+                                    modifier = Modifier.fillMaxWidth(),
+
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = Color.Red
+                                    ),
+
+                                    border = ButtonDefaults.outlinedButtonBorder.copy(
+                                        brush = SolidColor(Color.Red)
+                                    )
+                                ) {
+
+                                    Text("Reject")
                                 }
                             }
                         }

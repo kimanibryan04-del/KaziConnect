@@ -550,7 +550,7 @@ fun ClientGigScreen(navController: NavHostController) {
 
                 onClick = {
 
-                    navController.navigate(ROUT_POSTJOB)
+                    navController.navigate("$ROUT_POSTJOB/")
 
                 },
 
