@@ -66,6 +66,13 @@ fun ClientProfileScreen(navController: NavHostController) {
         mutableIntStateOf(0)
     }
 
+    /*
+    MESSAGE DOT
+     */
+    var hasUnreadMessages by remember {
+        mutableStateOf(false)
+    }
+
     LaunchedEffect(Unit) {
 
         FirebaseDatabase.getInstance().reference
@@ -118,6 +125,43 @@ fun ClientProfileScreen(navController: NavHostController) {
                     }
 
                     jobsRequested = count
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+
+        /*
+        LISTEN FOR UNREAD MESSAGES
+         */
+        FirebaseDatabase.getInstance().reference
+            .child("chats")
+            .addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+
+                    hasUnreadMessages = false
+
+                    for (chatSnapshot in snapshot.children) {
+
+                        val participants =
+                            chatSnapshot.child("participants")
+
+                        if (participants.hasChild(userId)) {
+
+                            val unread =
+                                chatSnapshot.child("unreadCount")
+                                    .child(userId)
+                                    .getValue(Int::class.java) ?: 0
+
+                            if (unread > 0) {
+
+                                hasUnreadMessages = true
+                                break
+                            }
+                        }
+                    }
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -242,10 +286,25 @@ fun ClientProfileScreen(navController: NavHostController) {
                 NavigationBarItem(
 
                     icon = {
-                        Icon(
-                            Icons.Outlined.Email,
-                            contentDescription = "Messages"
-                        )
+
+                        BadgedBox(
+
+                            badge = {
+
+                                if (hasUnreadMessages) {
+
+                                    Badge(
+                                        containerColor = colorAccent
+                                    )
+                                }
+                            }
+                        ) {
+
+                            Icon(
+                                Icons.Outlined.Email,
+                                contentDescription = "Messages"
+                            )
+                        }
                     },
 
                     label = {

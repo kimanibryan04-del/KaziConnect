@@ -394,8 +394,17 @@ fun FundiJobScreen(navController: NavHostController) {
 
             if (jobsList.isEmpty()) {
 
+                val emptyMessage = when (selectedTabIndex) {
+
+                    0 -> "No active jobs at the moment"
+
+                    1 -> "You have not applied to any jobs yet"
+
+                    else -> "No completed jobs yet"
+                }
+
                 EmptyJobsView(
-                    text = "You have no ${tabs[selectedTabIndex].lowercase()} jobs"
+                    text = emptyMessage
                 )
 
             } else {
@@ -564,7 +573,6 @@ fun JobCard(
                 }
             }
 
-            // REVIEW SECTION
             if (job.status == "completed") {
 
                 Spacer(modifier = Modifier.height(14.dp))

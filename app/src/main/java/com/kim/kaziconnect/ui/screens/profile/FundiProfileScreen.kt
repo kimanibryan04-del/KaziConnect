@@ -28,6 +28,7 @@ import com.kim.kaziconnect.navigation.ROUT_FUNDIHOME
 import com.kim.kaziconnect.navigation.ROUT_FUNDIJOB
 import com.kim.kaziconnect.navigation.ROUT_FUNDIMESSAGES
 import com.kim.kaziconnect.navigation.ROUT_FUNDIPROFILE
+import com.kim.kaziconnect.navigation.ROUT_REGISTER
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,6 +55,13 @@ fun FundiProfileScreen(navController: NavHostController) {
 
     var jobsDone by remember {
         mutableIntStateOf(0)
+    }
+
+    /*
+    MESSAGE DOT
+     */
+    var hasUnreadMessages by remember {
+        mutableStateOf(false)
     }
 
     LaunchedEffect(Unit) {
@@ -93,6 +101,45 @@ fun FundiProfileScreen(navController: NavHostController) {
 
                     jobsDone =
                         snapshot.childrenCount.toInt()
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+
+        /*
+        LISTEN FOR UNREAD MESSAGES
+         */
+        FirebaseDatabase.getInstance().reference
+            .child("chats")
+            .addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+
+                    hasUnreadMessages = false
+
+                    for (chatSnapshot in snapshot.children) {
+
+                        val participants =
+                            chatSnapshot.child("participants")
+
+                        if (
+                            participants.hasChild(userId)
+                        ) {
+
+                            val unread =
+                                chatSnapshot.child("unreadCount")
+                                    .child(userId)
+                                    .getValue(Int::class.java) ?: 0
+
+                            if (unread > 0) {
+
+                                hasUnreadMessages = true
+                                break
+                            }
+                        }
+                    }
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -206,7 +253,25 @@ fun FundiProfileScreen(navController: NavHostController) {
                 NavigationBarItem(
 
                     icon = {
-                        Icon(Icons.Outlined.Email, null)
+
+                        BadgedBox(
+
+                            badge = {
+
+                                if (hasUnreadMessages) {
+
+                                    Badge(
+                                        containerColor = colorAccent
+                                    )
+                                }
+                            }
+                        ) {
+
+                            Icon(
+                                Icons.Outlined.Email,
+                                null
+                            )
+                        }
                     },
 
                     label = {
@@ -220,7 +285,13 @@ fun FundiProfileScreen(navController: NavHostController) {
                         navController.navigate(ROUT_FUNDIMESSAGES) {
                             launchSingleTop = true
                         }
-                    }
+                    },
+
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = colorAccent,
+                        selectedTextColor = colorAccent,
+                        indicatorColor = Color.Transparent
+                    )
                 )
             }
         }
@@ -302,7 +373,9 @@ fun FundiProfileScreen(navController: NavHostController) {
                     .padding(horizontal = 20.dp)
             ) {
 
-                // ACCOUNT SETTINGS
+                /*
+                ACCOUNT SETTINGS
+                 */
                 ProfileSectionHeader("Account Settings")
 
                 Card(
@@ -335,7 +408,9 @@ fun FundiProfileScreen(navController: NavHostController) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // WORK SETTINGS
+                /*
+                WORK SETTINGS
+                 */
                 ProfileSectionHeader("Work Settings")
 
                 Card(
@@ -368,7 +443,9 @@ fun FundiProfileScreen(navController: NavHostController) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // PREFERENCES
+                /*
+                PREFERENCES
+                 */
                 ProfileSectionHeader("Preferences")
 
                 Card(
@@ -401,7 +478,9 @@ fun FundiProfileScreen(navController: NavHostController) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // SUPPORT
+                /*
+                SUPPORT
+                 */
                 ProfileSectionHeader("Support")
 
                 Card(
@@ -425,7 +504,9 @@ fun FundiProfileScreen(navController: NavHostController) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // LOGOUT
+                /*
+                LOGOUT
+                 */
                 Card(
 
                     colors = CardDefaults.cardColors(
@@ -441,7 +522,16 @@ fun FundiProfileScreen(navController: NavHostController) {
                         "Logout",
                         Icons.Outlined.Logout,
                         Color.Red,
-                        isLast = true
+                        isLast = true,
+                        onClick = {
+
+                            FirebaseAuth.getInstance().signOut()
+
+                            navController.navigate(ROUT_REGISTER) {
+
+                                popUpTo(0)
+                            }
+                        }
                     )
                 }
             }
@@ -531,7 +621,8 @@ fun ProfileMenuOption(
     title: String,
     icon: ImageVector,
     color: Color,
-    isLast: Boolean = false
+    isLast: Boolean = false,
+    onClick: () -> Unit = {}
 ) {
 
     Column {

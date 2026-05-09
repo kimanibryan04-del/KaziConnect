@@ -72,9 +72,9 @@ fun ChatScreen(
     val coroutineScope = rememberCoroutineScope()
 
     /*
-    MARK CHAT AS OPENED
+    CHAT OPENED
      */
-    LaunchedEffect(Unit) {
+    LaunchedEffect(chatId) {
 
         /*
         RESET UNREAD COUNT
@@ -85,53 +85,69 @@ fun ChatScreen(
             .child(currentUserId)
             .setValue(0)
 
-        database.child("messages")
-            .child(chatId)
-            .addValueEventListener(object : ValueEventListener {
+        val messagesRef =
+            database.child("messages")
+                .child(chatId)
 
-                override fun onDataChange(snapshot: DataSnapshot) {
+        val listener = object : ValueEventListener {
 
-                    messagesList.clear()
+            override fun onDataChange(snapshot: DataSnapshot) {
 
-                    for (messageSnapshot in snapshot.children) {
+                messagesList.clear()
 
-                        val message =
-                            messageSnapshot.getValue(MessageModel::class.java)
+                for (messageSnapshot in snapshot.children) {
 
-                        if (message != null) {
+                    val message =
+                        messageSnapshot.getValue(MessageModel::class.java)
 
-                            messagesList.add(message)
+                    if (message != null) {
 
-                            /*
-                            AUTO MARK AS SEEN
-                             */
-                            if (
-                                message.receiverId == currentUserId &&
-                                !message.seen
-                            ) {
-
-                                messageSnapshot.ref
-                                    .child("seen")
-                                    .setValue(true)
-                            }
-                        }
-                    }
-
-                    coroutineScope.launch {
-
-                        if (messagesList.isNotEmpty()) {
-
-                            listState.animateScrollToItem(
-                                messagesList.size - 1
-                            )
-                        }
+                        messagesList.add(message)
                     }
                 }
 
-                override fun onCancelled(error: DatabaseError) {
+                /*
+                MARK ONLY LATEST RECEIVED MESSAGE AS SEEN
+                 */
+                val latestMessageSnapshot =
+                    snapshot.children.lastOrNull()
 
+                if (latestMessageSnapshot != null) {
+
+                    val latestMessage =
+                        latestMessageSnapshot
+                            .getValue(MessageModel::class.java)
+
+                    if (
+                        latestMessage != null &&
+                        latestMessage.receiverId == currentUserId &&
+                        latestMessage.senderId != currentUserId &&
+                        !latestMessage.seen
+                    ) {
+
+                        latestMessageSnapshot.ref
+                            .child("seen")
+                            .setValue(true)
+                    }
                 }
-            })
+
+                coroutineScope.launch {
+
+                    if (messagesList.isNotEmpty()) {
+
+                        listState.animateScrollToItem(
+                            messagesList.size - 1
+                        )
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+
+            }
+        }
+
+        messagesRef.addValueEventListener(listener)
     }
 
     Scaffold(
@@ -240,16 +256,13 @@ fun ChatScreen(
         ) {
 
             /*
-            WHATSAPP STYLE BACKGROUND
+            BACKGROUND
              */
 
             Canvas(
                 modifier = Modifier.fillMaxSize()
             ) {
 
-                /*
-                TOP LEFT GLOW
-                 */
                 drawCircle(
                     color = deepCobalt.copy(alpha = 0.08f),
                     radius = 420f,
@@ -259,9 +272,6 @@ fun ChatScreen(
                     )
                 )
 
-                /*
-                RIGHT GLOW
-                 */
                 drawCircle(
                     color = cobaltLight.copy(alpha = 0.05f),
                     radius = 260f,
@@ -271,9 +281,6 @@ fun ChatScreen(
                     )
                 )
 
-                /*
-                BOTTOM GLOW
-                 */
                 drawCircle(
                     color = colorAccent.copy(alpha = 0.05f),
                     radius = 340f,
@@ -283,9 +290,6 @@ fun ChatScreen(
                     )
                 )
 
-                /*
-                DOT PATTERN
-                 */
                 val dotColor =
                     deepCobalt.copy(alpha = 0.045f)
 
@@ -304,36 +308,6 @@ fun ChatScreen(
                         )
                     }
                 }
-
-                /*
-                FLOATING DOTS
-                 */
-                drawCircle(
-                    color = colorAccent.copy(alpha = 0.09f),
-                    radius = 10f,
-                    center = Offset(
-                        220f,
-                        520f
-                    )
-                )
-
-                drawCircle(
-                    color = deepCobalt.copy(alpha = 0.07f),
-                    radius = 8f,
-                    center = Offset(
-                        850f,
-                        920f
-                    )
-                )
-
-                drawCircle(
-                    color = cobaltLight.copy(alpha = 0.07f),
-                    radius = 6f,
-                    center = Offset(
-                        650f,
-                        280f
-                    )
-                )
             }
 
             Column(
@@ -466,7 +440,7 @@ fun ChatScreen(
                                         )
 
                                         /*
-                                        SEEN STATUS
+                                        MESSAGE STATUS
                                          */
                                         if (isMe) {
 
@@ -498,6 +472,10 @@ fun ChatScreen(
                         }
                     }
                 }
+
+                /*
+                MESSAGE INPUT
+                 */
 
                 Surface(
 

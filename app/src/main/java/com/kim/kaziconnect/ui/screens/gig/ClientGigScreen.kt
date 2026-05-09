@@ -5,7 +5,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Email
@@ -63,6 +66,51 @@ fun ClientGigScreen(navController: NavHostController) {
 
     val completedJobs = remember {
         mutableStateListOf<JobModel>()
+    }
+
+    // =========================
+    // MESSAGE BADGE COUNT
+    // =========================
+
+    var unreadMessageCount by remember {
+        mutableIntStateOf(0)
+    }
+
+    val currentUserId =
+        FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
+    LaunchedEffect(Unit) {
+
+        FirebaseDatabase.getInstance().reference
+            .child("chats")
+            .addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+
+                    var count = 0
+
+                    for (chatSnapshot in snapshot.children) {
+
+                        val receiverId =
+                            chatSnapshot.child("receiverId")
+                                .getValue(String::class.java) ?: ""
+
+                        val seen =
+                            chatSnapshot.child("seen")
+                                .getValue(Boolean::class.java) ?: false
+
+                        if (receiverId == currentUserId && !seen) {
+                            count++
+                        }
+                    }
+
+                    unreadMessageCount = count
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
     }
 
     val userId =
@@ -292,13 +340,38 @@ fun ClientGigScreen(navController: NavHostController) {
                     )
                 )
 
+                // =========================
+                // UPDATED MESSAGES BUTTON
+                // =========================
+
                 NavigationBarItem(
 
                     icon = {
-                        Icon(
-                            Icons.Outlined.Email,
-                            contentDescription = "Messages"
-                        )
+
+                        BadgedBox(
+
+                            badge = {
+
+                                if (unreadMessageCount > 0) {
+
+                                    Badge(
+                                        containerColor = colorAccent
+                                    ) {
+
+                                        Text(
+                                            text = unreadMessageCount.toString(),
+                                            color = Color.White
+                                        )
+                                    }
+                                }
+                            }
+                        ) {
+
+                            Icon(
+                                Icons.Outlined.Email,
+                                contentDescription = "Messages"
+                            )
+                        }
                     },
 
                     label = {
@@ -385,17 +458,13 @@ fun ClientGigScreen(navController: NavHostController) {
                                 .fillMaxWidth()
                                 .clickable {
 
-                                    // PENDING TAB -> OPEN APPLICANTS
                                     if (selectedTab == 1) {
 
                                         navController.navigate(
                                             "${ROUT_APPLICANTSLIST}/${job.id}"
                                         )
 
-                                    }
-
-                                    // ACTIVE + COMPLETED -> OPEN JOB DETAILS
-                                    else {
+                                    } else {
 
                                         navController.navigate(
                                             "${ROUT_JOBDETAILS_NOAPPLY}/${job.id}"
@@ -447,7 +516,6 @@ fun ClientGigScreen(navController: NavHostController) {
                                     fontWeight = FontWeight.Black
                                 )
 
-                                // REVIEW SECTION
                                 if (job.status == "completed") {
 
                                     Spacer(modifier = Modifier.height(14.dp))

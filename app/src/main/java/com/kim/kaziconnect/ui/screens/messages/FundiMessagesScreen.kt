@@ -49,9 +49,8 @@ fun FundiMessagesScreen(navController: NavHostController) {
     }
 
     /*
-    MESSAGE BADGE
+    BOTTOM NAVIGATION DOT
      */
-
     var hasUnreadMessages by remember {
         mutableStateOf(false)
     }
@@ -66,9 +65,6 @@ fun FundiMessagesScreen(navController: NavHostController) {
 
                     chatsList.clear()
 
-                    /*
-                    SHOW DOT ONLY IF THERE ARE CHATS
-                     */
                     hasUnreadMessages = false
 
                     for (chatSnapshot in snapshot.children) {
@@ -81,7 +77,15 @@ fun FundiMessagesScreen(navController: NavHostController) {
                             chat.participants.containsKey(currentUserId)
                         ) {
 
-                            hasUnreadMessages = true
+                            /*
+                            CHECK UNREAD COUNT
+                             */
+                            val unreadCount =
+                                chat.unreadCount[currentUserId] ?: 0
+
+                            if (unreadCount > 0) {
+                                hasUnreadMessages = true
+                            }
 
                             val otherUserId =
                                 chat.participants.keys.firstOrNull {
@@ -177,7 +181,7 @@ fun FundiMessagesScreen(navController: NavHostController) {
                 )
 
                 /*
-                JOBS
+                MY JOBS
                  */
 
                 NavigationBarItem(
@@ -255,13 +259,12 @@ fun FundiMessagesScreen(navController: NavHostController) {
                             badge = {
 
                                 /*
-                                DOT DISAPPEARS WHEN SCREEN IS OPENED
+                                SHOW DOT ONLY WHEN THERE ARE UNREAD MESSAGES
                                  */
-
-                                if (hasUnreadMessages.not()) {
+                                if (hasUnreadMessages) {
 
                                     Badge(
-                                        containerColor = Color.Transparent
+                                        containerColor = colorAccent
                                     )
                                 }
                             }
@@ -281,12 +284,6 @@ fun FundiMessagesScreen(navController: NavHostController) {
                     selected = true,
 
                     onClick = {
-
-                        /*
-                        REMOVE DOT WHEN OPENED
-                         */
-
-                        hasUnreadMessages = false
 
                         navController.navigate(ROUT_FUNDIMESSAGES) {
                             launchSingleTop = true
@@ -421,17 +418,14 @@ fun FundiMessagesScreen(navController: NavHostController) {
                                 it != currentUserId
                             } ?: ""
 
+                        val unreadCount =
+                            chat.unreadCount[currentUserId] ?: 0
+
                         Card(
 
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-
-                                    /*
-                                    REMOVE DOT WHEN CHAT OPENS
-                                     */
-
-                                    hasUnreadMessages = false
 
                                     navController.navigate(
                                         "$ROUT_CHAT/${chat.chatId}/$otherUserId/$otherUserName"
@@ -519,15 +513,18 @@ fun FundiMessagesScreen(navController: NavHostController) {
                                 }
 
                                 /*
-                                SMALL MESSAGE DOT
+                                UNREAD DOT
                                  */
 
-                                Box(
-                                    modifier = Modifier
-                                        .size(10.dp)
-                                        .clip(CircleShape)
-                                        .background(colorAccent)
-                                )
+                                if (unreadCount > 0) {
+
+                                    Box(
+                                        modifier = Modifier
+                                            .size(10.dp)
+                                            .clip(CircleShape)
+                                            .background(colorAccent)
+                                    )
+                                }
                             }
                         }
                     }

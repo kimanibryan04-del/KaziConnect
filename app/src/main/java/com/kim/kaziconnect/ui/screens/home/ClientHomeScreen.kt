@@ -7,6 +7,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.Icons.Default
 import androidx.compose.material.icons.filled.*
@@ -53,6 +55,12 @@ fun ClientHomeScreen(navController: NavHostController) {
         mutableStateOf("")
     }
 
+    // MESSAGE DOT
+    var hasUnreadMessages by remember {
+        mutableStateOf(false)
+    }
+
+    // NOTIFICATION COUNT
     var unreadCount by remember {
         mutableStateOf(0)
     }
@@ -61,10 +69,11 @@ fun ClientHomeScreen(navController: NavHostController) {
         mutableStateListOf<JobModel>()
     }
 
-    LaunchedEffect(Unit) {
+    val userId =
+        auth.currentUser?.uid ?: ""
 
-        val userId = auth.currentUser?.uid
-            ?: return@LaunchedEffect
+    // NOTIFICATIONS
+    LaunchedEffect(Unit) {
 
         database.child("notifications")
             .child(userId)
@@ -94,10 +103,45 @@ fun ClientHomeScreen(navController: NavHostController) {
             })
     }
 
+    // MESSAGE DOT LOGIC
     LaunchedEffect(Unit) {
 
-        val userId = auth.currentUser?.uid
-            ?: return@LaunchedEffect
+        database.child("messages")
+            .addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+
+                    hasUnreadMessages = false
+
+                    for (chatSnapshot in snapshot.children) {
+
+                        for (messageSnapshot in chatSnapshot.children) {
+
+                            val receiverId =
+                                messageSnapshot.child("receiverId")
+                                    .getValue(String::class.java) ?: ""
+
+                            val seen =
+                                messageSnapshot.child("seen")
+                                    .getValue(Boolean::class.java) ?: false
+
+                            if (receiverId == userId && !seen) {
+
+                                hasUnreadMessages = true
+                                break
+                            }
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+    }
+
+    // ONGOING JOBS
+    LaunchedEffect(Unit) {
 
         database.child("clientOngoingJobs")
             .child(userId)
@@ -126,6 +170,7 @@ fun ClientHomeScreen(navController: NavHostController) {
     }
 
     Scaffold(
+
         bottomBar = {
 
             NavigationBar(
@@ -134,19 +179,27 @@ fun ClientHomeScreen(navController: NavHostController) {
             ) {
 
                 NavigationBarItem(
+
                     icon = {
                         Icon(
                             Icons.Outlined.Home,
                             contentDescription = "Home"
                         )
                     },
-                    label = { Text("Home") },
+
+                    label = {
+                        Text("Home")
+                    },
+
                     selected = true,
+
                     onClick = {
+
                         navController.navigate(ROUT_CLIENTHOME) {
                             launchSingleTop = true
                         }
                     },
+
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,
@@ -157,19 +210,27 @@ fun ClientHomeScreen(navController: NavHostController) {
                 )
 
                 NavigationBarItem(
+
                     icon = {
                         Icon(
                             Icons.Filled.List,
                             contentDescription = "Gigs"
                         )
                     },
-                    label = { Text("Gigs") },
+
+                    label = {
+                        Text("Gigs")
+                    },
+
                     selected = false,
+
                     onClick = {
+
                         navController.navigate(ROUT_CLIENTGIG) {
                             launchSingleTop = true
                         }
                     },
+
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,
@@ -180,19 +241,27 @@ fun ClientHomeScreen(navController: NavHostController) {
                 )
 
                 NavigationBarItem(
+
                     icon = {
                         Icon(
                             Icons.Outlined.Person,
                             contentDescription = "Profile"
                         )
                     },
-                    label = { Text("Profile") },
+
+                    label = {
+                        Text("Profile")
+                    },
+
                     selected = false,
+
                     onClick = {
+
                         navController.navigate(ROUT_CLIENTPROFILE) {
                             launchSingleTop = true
                         }
                     },
+
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,
@@ -203,19 +272,43 @@ fun ClientHomeScreen(navController: NavHostController) {
                 )
 
                 NavigationBarItem(
+
                     icon = {
-                        Icon(
-                            Icons.Outlined.Email,
-                            contentDescription = "Messages"
-                        )
+
+                        BadgedBox(
+
+                            badge = {
+
+                                if (hasUnreadMessages) {
+
+                                    Badge(
+                                        containerColor = Color.Red
+                                    )
+                                }
+                            }
+
+                        ) {
+
+                            Icon(
+                                Icons.Outlined.Email,
+                                contentDescription = "Messages"
+                            )
+                        }
                     },
-                    label = { Text("Messages") },
+
+                    label = {
+                        Text("Messages")
+                    },
+
                     selected = false,
+
                     onClick = {
+
                         navController.navigate(ROUT_CLIENTMESSAGES) {
                             launchSingleTop = true
                         }
                     },
+
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colorAccent,
                         selectedTextColor = colorAccent,
@@ -226,6 +319,7 @@ fun ClientHomeScreen(navController: NavHostController) {
                 )
             }
         }
+
     ) { paddingValues ->
 
         Column(
@@ -253,6 +347,7 @@ fun ClientHomeScreen(navController: NavHostController) {
                         .background(Color.White, CircleShape)
                         .size(40.dp)
                 ) {
+
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Back",
@@ -269,11 +364,6 @@ fun ClientHomeScreen(navController: NavHostController) {
                         color = colorPrimary
                     )
 
-                    Text(
-                        text = "Nairobi, Kenya",
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
                 }
 
                 Surface(
@@ -334,9 +424,11 @@ fun ClientHomeScreen(navController: NavHostController) {
 
                 OutlinedTextField(
                     value = searchText,
+
                     onValueChange = {
                         searchText = it
                     },
+
                     placeholder = {
 
                         Text(
@@ -345,6 +437,7 @@ fun ClientHomeScreen(navController: NavHostController) {
                             fontSize = 14.sp
                         )
                     },
+
                     leadingIcon = {
 
                         Icon(
@@ -353,13 +446,17 @@ fun ClientHomeScreen(navController: NavHostController) {
                             tint = colorAccent
                         )
                     },
+
                     textStyle = TextStyle(
                         color = colorPrimary,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
                     ),
+
                     modifier = Modifier.fillMaxWidth(),
+
                     shape = RoundedCornerShape(16.dp),
+
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
@@ -368,6 +465,7 @@ fun ClientHomeScreen(navController: NavHostController) {
                         unfocusedBorderColor = Color.Transparent,
                         cursorColor = colorAccent
                     ),
+
                     singleLine = true
                 )
             }
@@ -375,7 +473,7 @@ fun ClientHomeScreen(navController: NavHostController) {
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                "Choose a service to get started",
+                "Choose a service and get started",
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 18.sp,
                 color = colorPrimary
@@ -406,6 +504,7 @@ fun ClientHomeScreen(navController: NavHostController) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
+
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
 
@@ -419,7 +518,10 @@ fun ClientHomeScreen(navController: NavHostController) {
                             modifier = Modifier.weight(1f),
 
                             onClick = {
-                                navController.navigate("$ROUT_POSTJOB/$name")
+
+                                navController.navigate(
+                                    "$ROUT_POSTJOB/$name"
+                                )
                             }
                         )
                     }
@@ -441,10 +543,13 @@ fun ClientHomeScreen(navController: NavHostController) {
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
+
                     colors = CardDefaults.cardColors(
                         containerColor = Color.White
                     ),
+
                     shape = RoundedCornerShape(20.dp),
+
                     elevation = CardDefaults.cardElevation(
                         defaultElevation = 2.dp
                     )
@@ -454,6 +559,7 @@ fun ClientHomeScreen(navController: NavHostController) {
                         modifier = Modifier
                             .padding(40.dp)
                             .fillMaxWidth(),
+
                         contentAlignment = Alignment.Center
                     ) {
 
@@ -568,7 +674,9 @@ fun ServiceCard(
 
         Column(
             modifier = Modifier.padding(16.dp),
+
             horizontalAlignment = Alignment.CenterHorizontally,
+
             verticalArrangement = Arrangement.Center
         ) {
 
@@ -603,5 +711,8 @@ fun ServiceCard(
 @Preview(showBackground = true)
 @Composable
 fun ClientHomeScreenPreview() {
-    ClientHomeScreen(rememberNavController())
+
+    ClientHomeScreen(
+        rememberNavController()
+    )
 }

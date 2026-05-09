@@ -56,7 +56,7 @@ fun ClientMessagesScreen(navController: NavHostController) {
     }
 
     /*
-    UNREAD MESSAGE BADGE
+    BOTTOM NAVIGATION DOT
      */
 
     var hasUnreadMessages by remember {
@@ -85,12 +85,14 @@ fun ClientMessagesScreen(navController: NavHostController) {
                             chat.participants.containsKey(currentUserId)
                         ) {
 
-                            val unread =
-                                chatSnapshot.child("unreadCount")
-                                    .child(currentUserId)
-                                    .getValue(Int::class.java) ?: 0
+                            /*
+                            CHECK UNREAD COUNT
+                             */
 
-                            if (unread > 0) {
+                            val unreadCount =
+                                chat.unreadCount[currentUserId] ?: 0
+
+                            if (unreadCount > 0) {
                                 hasUnreadMessages = true
                             }
 
@@ -156,6 +158,10 @@ fun ClientMessagesScreen(navController: NavHostController) {
                 tonalElevation = 8.dp
             ) {
 
+                /*
+                HOME
+                 */
+
                 NavigationBarItem(
 
                     icon = {
@@ -185,6 +191,10 @@ fun ClientMessagesScreen(navController: NavHostController) {
                         indicatorColor = Color.Transparent
                     )
                 )
+
+                /*
+                GIGS
+                 */
 
                 NavigationBarItem(
 
@@ -216,6 +226,10 @@ fun ClientMessagesScreen(navController: NavHostController) {
                     )
                 )
 
+                /*
+                PROFILE
+                 */
+
                 NavigationBarItem(
 
                     icon = {
@@ -246,6 +260,10 @@ fun ClientMessagesScreen(navController: NavHostController) {
                     )
                 )
 
+                /*
+                MESSAGES
+                 */
+
                 NavigationBarItem(
 
                     icon = {
@@ -253,6 +271,10 @@ fun ClientMessagesScreen(navController: NavHostController) {
                         BadgedBox(
 
                             badge = {
+
+                                /*
+                                SHOW DOT ONLY WHEN THERE ARE UNREAD MESSAGES
+                                 */
 
                                 if (hasUnreadMessages) {
 
@@ -359,6 +381,10 @@ fun ClientMessagesScreen(navController: NavHostController) {
                 )
             }
 
+            /*
+            EMPTY STATE
+             */
+
             if (chatsList.isEmpty()) {
 
                 Column(
@@ -407,6 +433,10 @@ fun ClientMessagesScreen(navController: NavHostController) {
 
             } else {
 
+                /*
+                CHAT LIST
+                 */
+
                 LazyColumn(
 
                     modifier = Modifier.fillMaxSize(),
@@ -427,6 +457,9 @@ fun ClientMessagesScreen(navController: NavHostController) {
                             chat.participants.keys.firstOrNull {
                                 it != currentUserId
                             } ?: ""
+
+                        val unreadCount =
+                            chat.unreadCount[currentUserId] ?: 0
 
                         Card(
 
@@ -458,6 +491,10 @@ fun ClientMessagesScreen(navController: NavHostController) {
 
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+
+                                /*
+                                AVATAR
+                                 */
 
                                 Box(
 
@@ -492,6 +529,10 @@ fun ClientMessagesScreen(navController: NavHostController) {
 
                                 Spacer(modifier = Modifier.width(14.dp))
 
+                                /*
+                                CHAT DETAILS
+                                 */
+
                                 Column(
                                     modifier = Modifier.weight(1f)
                                 ) {
@@ -517,9 +558,6 @@ fun ClientMessagesScreen(navController: NavHostController) {
                                 /*
                                 UNREAD DOT
                                  */
-
-                                val unreadCount =
-                                    chat.unreadCount[currentUserId] ?: 0
 
                                 if (unreadCount > 0) {
 
