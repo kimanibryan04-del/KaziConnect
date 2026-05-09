@@ -28,6 +28,8 @@ import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.kim.kaziconnect.models.JobModel
+import com.kim.kaziconnect.navigation.ROUT_CHAT
+import com.kim.kaziconnect.navigation.ROUT_CLIENTPUBLICPROFILE
 import com.kim.kaziconnect.navigation.ROUT_FUNDIHOME
 import com.kim.kaziconnect.navigation.ROUT_FUNDIJOB
 import com.kim.kaziconnect.navigation.ROUT_FUNDIMESSAGES
@@ -67,6 +69,41 @@ fun FundiJobScreen(navController: NavHostController) {
 
     val userId =
         FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
+    var hasUnreadMessages by remember {
+        mutableStateOf(false)
+    }
+
+    LaunchedEffect(Unit) {
+
+        FirebaseDatabase.getInstance().reference
+            .child("messages")
+            .addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+
+                    hasUnreadMessages = snapshot.children.any { chatSnapshot ->
+
+                        chatSnapshot.children.any { messageSnapshot ->
+
+                            val receiverId =
+                                messageSnapshot.child("receiverId")
+                                    .getValue(String::class.java) ?: ""
+
+                            val seen =
+                                messageSnapshot.child("seen")
+                                    .getValue(Boolean::class.java) ?: false
+
+                            receiverId == userId && !seen
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+    }
 
     // PENDING JOBS
     LaunchedEffect(Unit) {
@@ -360,10 +397,26 @@ fun FundiJobScreen(navController: NavHostController) {
                 NavigationBarItem(
 
                     icon = {
-                        Icon(
-                            Icons.Outlined.Email,
-                            contentDescription = null
-                        )
+
+                        BadgedBox(
+
+                            badge = {
+
+                                if (hasUnreadMessages) {
+
+                                    Badge(
+                                        containerColor = colorAccent
+                                    )
+                                }
+                            }
+
+                        ) {
+
+                            Icon(
+                                Icons.Outlined.Email,
+                                contentDescription = null
+                            )
+                        }
                     },
 
                     label = {
@@ -423,6 +476,7 @@ fun FundiJobScreen(navController: NavHostController) {
                             job = job,
                             colorPrimary = colorPrimary,
                             colorAccent = colorAccent,
+                            navController = navController,
 
                             onClick = {
 
@@ -480,23 +534,33 @@ fun JobCard(
     job: JobModel,
     colorPrimary: Color,
     colorAccent: Color,
+    navController: NavHostController,
     onClick: () -> Unit,
     onReviewClick: () -> Unit
 ) {
 
+    val currentUserId =
+        FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
+    val chatId =
+        if (currentUserId < job.clientId)
+            "${currentUserId}_${job.clientId}"
+        else
+            "${job.clientId}_${currentUserId}"
+
     val jobIcon = when (job.category) {
 
-        "Plumbing" -> Icons.Default.Build
+        "Plumber" -> Icons.Default.Build
 
-        "Electrical" -> Icons.Default.Bolt
+        "Electrician" -> Icons.Default.Bolt
 
-        "Painting" -> Icons.Default.Brush
+        "Painter" -> Icons.Default.Brush
 
-        "Cleaning" -> Icons.Default.CleaningServices
+        "Cleaner" -> Icons.Default.CleaningServices
 
-        "Carpentry" -> Icons.Default.Handyman
+        "Carpenter" -> Icons.Default.Handyman
 
-        "Masonry" -> Icons.Default.HomeRepairService
+        "Mason" -> Icons.Default.HomeRepairService
 
         else -> Icons.Default.Work
     }
@@ -573,7 +637,43 @@ fun JobCard(
                 }
             }
 
+            /*
+            SHOW ONLY IN COMPLETED JOBS
+             */
             if (job.status == "completed") {
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                OutlinedButton(
+
+                    onClick = {
+
+                        navController.navigate(
+                            "$ROUT_CLIENTPUBLICPROFILE/${job.clientId}"
+                        )
+                    },
+
+                    modifier = Modifier.fillMaxWidth(),
+
+                    shape = RoundedCornerShape(14.dp),
+
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = colorAccent
+                    )
+                ) {
+
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = "View Client Profile",
+                        fontWeight = FontWeight.Bold
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(14.dp))
 

@@ -39,7 +39,10 @@ import com.google.firebase.auth.FirebaseAuth   // ✅ ADDED
 import com.google.firebase.database.FirebaseDatabase
 import com.kim.kaziconnect.navigation.ROUT_CLIENTHOME
 import com.kim.kaziconnect.navigation.ROUT_FUNDIHOME
-
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.imePadding
+import com.kim.kaziconnect.navigation.ROUT_FORGOTPASSWORD
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,6 +76,8 @@ fun LoginScreen(navController: NavHostController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .imePadding()
+            .verticalScroll(rememberScrollState())
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(topGradientColor, Color.White)
@@ -192,7 +197,10 @@ fun LoginScreen(navController: NavHostController) {
         )
 
         TextButton(
-            onClick = { },
+            onClick = {
+                navController.navigate(ROUT_FORGOTPASSWORD)
+
+            },
             modifier = Modifier.align(Alignment.End),
             contentPadding = PaddingValues(0.dp)
         ) {

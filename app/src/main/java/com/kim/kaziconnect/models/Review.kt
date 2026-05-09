@@ -6,6 +6,8 @@ data class ReviewModel(
     var jobId: String = "",
 
     var reviewerId: String = "",
+    var reviewerName: String = "",
+
     var receiverId: String = "",
 
     var rating: Float = 0f,

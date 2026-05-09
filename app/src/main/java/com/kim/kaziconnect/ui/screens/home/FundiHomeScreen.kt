@@ -29,6 +29,7 @@ import com.google.firebase.database.*
 import com.kim.kaziconnect.models.FundiStats
 import com.kim.kaziconnect.models.JobModel
 import com.kim.kaziconnect.navigation.*
+import com.kim.kaziconnect.navigation.ROUT_CLIENTPUBLICPROFILE
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,6 +53,13 @@ fun FundiHomeScreen(navController: NavHostController) {
      */
     var hasUnreadMessages by remember {
         mutableStateOf(false)
+    }
+
+    /*
+    FUNDI SKILL
+     */
+    var fundiSkill by remember {
+        mutableStateOf("")
     }
 
     /*
@@ -173,6 +181,33 @@ fun FundiHomeScreen(navController: NavHostController) {
             })
     }
 
+    /*
+    GET FUNDI SKILL
+     */
+    LaunchedEffect(Unit) {
+
+        val userId =
+            FirebaseAuth.getInstance().currentUser?.uid
+                ?: return@LaunchedEffect
+
+        database.child("users")
+            .child(userId)
+            .child("skill")
+            .addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+
+                    fundiSkill =
+                        snapshot.getValue(String::class.java)
+                            ?: ""
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+    }
+
     val colorPrimary = Color(0xFF1B263B)
     val colorAccent = Color(0xFFEE6C4D)
     val lightBg = Color(0xFFF1F4F9)
@@ -189,14 +224,26 @@ fun FundiHomeScreen(navController: NavHostController) {
         mutableStateOf("")
     }
 
+    /*
+    UPDATED SEARCH FILTER
+     */
     val filteredJobs = availableJobs.filter { job ->
 
         job.title.contains(
             searchText,
             ignoreCase = true
-        ) ||
+        )
+
+                ||
 
                 job.location.contains(
+                    searchText,
+                    ignoreCase = true
+                )
+
+                ||
+
+                job.category.contains(
                     searchText,
                     ignoreCase = true
                 )
@@ -205,7 +252,7 @@ fun FundiHomeScreen(navController: NavHostController) {
     /*
     AVAILABLE JOBS
      */
-    LaunchedEffect(Unit) {
+    LaunchedEffect(fundiSkill) {
 
         database.child("jobs")
             .addValueEventListener(object : ValueEventListener {
@@ -225,7 +272,27 @@ fun FundiHomeScreen(navController: NavHostController) {
 
                                 job.id = jobSnapshot.key ?: ""
 
-                                availableJobs.add(job)
+                                /*
+                                IF NO SKILL -> SHOW ALL JOBS
+                                 */
+                                if (fundiSkill.isBlank()) {
+
+                                    availableJobs.add(job)
+                                }
+
+                                /*
+                                FILTER JOBS BY SKILL
+                                 */
+                                else if (
+
+                                    job.category.equals(
+                                        fundiSkill,
+                                        ignoreCase = true
+                                    )
+                                ) {
+
+                                    availableJobs.add(job)
+                                }
                             }
 
                         } catch (e: Exception) {
@@ -294,9 +361,6 @@ fun FundiHomeScreen(navController: NavHostController) {
                 tonalElevation = 8.dp
             ) {
 
-                /*
-                HOME
-                 */
                 NavigationBarItem(
 
                     icon = {
@@ -327,9 +391,6 @@ fun FundiHomeScreen(navController: NavHostController) {
                     )
                 )
 
-                /*
-                JOBS
-                 */
                 NavigationBarItem(
 
                     icon = {
@@ -354,9 +415,6 @@ fun FundiHomeScreen(navController: NavHostController) {
                     }
                 )
 
-                /*
-                PROFILE
-                 */
                 NavigationBarItem(
 
                     icon = {
@@ -381,9 +439,6 @@ fun FundiHomeScreen(navController: NavHostController) {
                     }
                 )
 
-                /*
-                MESSAGES
-                 */
                 NavigationBarItem(
 
                     icon = {
@@ -446,9 +501,6 @@ fun FundiHomeScreen(navController: NavHostController) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                /*
-                HEADER
-                 */
                 Row(
 
                     modifier = Modifier.fillMaxWidth(),
@@ -547,9 +599,6 @@ fun FundiHomeScreen(navController: NavHostController) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                /*
-                SEARCH BAR
-                 */
                 Surface(
 
                     shape = RoundedCornerShape(16.dp),
@@ -602,9 +651,6 @@ fun FundiHomeScreen(navController: NavHostController) {
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                /*
-                STATS
-                 */
                 Text(
                     text = "Your Performance",
                     fontWeight = FontWeight.ExtraBold,
@@ -641,9 +687,6 @@ fun FundiHomeScreen(navController: NavHostController) {
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
-            /*
-            ONGOING TASKS
-             */
             item {
 
                 Text(
@@ -699,13 +742,7 @@ fun FundiHomeScreen(navController: NavHostController) {
 
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                            .clickable {
-
-                                navController.navigate(
-                                    "${ROUT_JOBDETAILS_NOAPPLY}/${task.id}"
-                                )
-                            },
+                            .padding(vertical = 8.dp),
 
                         colors = CardDefaults.cardColors(
                             containerColor = Color.White
@@ -714,48 +751,134 @@ fun FundiHomeScreen(navController: NavHostController) {
                         shape = RoundedCornerShape(16.dp)
                     ) {
 
-                        Row(
-
-                            modifier = Modifier.padding(20.dp),
-
-                            verticalAlignment = Alignment.CenterVertically,
-
-                            horizontalArrangement =
-                                Arrangement.SpaceBetween
+                        Column(
+                            modifier = Modifier.padding(20.dp)
                         ) {
 
-                            Column(
-                                modifier = Modifier.weight(1f)
+                            Row(
+
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+
+                                        navController.navigate(
+                                            "${ROUT_JOBDETAILS_NOAPPLY}/${task.id}"
+                                        )
+                                    },
+
+                                verticalAlignment = Alignment.CenterVertically,
+
+                                horizontalArrangement =
+                                    Arrangement.SpaceBetween
                             ) {
 
-                                Text(
-                                    text = task.title,
-                                    fontWeight = FontWeight.Bold,
-                                    color = colorPrimary,
-                                    fontSize = 16.sp
-                                )
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ) {
+
+                                    Text(
+                                        text = task.title,
+                                        fontWeight = FontWeight.Bold,
+                                        color = colorPrimary,
+                                        fontSize = 16.sp
+                                    )
+
+                                    Text(
+                                        text = task.location,
+                                        color = Color.Gray,
+                                        fontSize = 13.sp
+                                    )
+                                }
 
                                 Text(
-                                    text = task.location,
-                                    color = Color.Gray,
-                                    fontSize = 13.sp
+                                    text = task.budget,
+                                    fontWeight = FontWeight.Black,
+                                    color = colorAccent,
+                                    fontSize = 16.sp
                                 )
                             }
 
-                            Text(
-                                text = task.budget,
-                                fontWeight = FontWeight.Black,
-                                color = colorAccent,
-                                fontSize = 16.sp
-                            )
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            Button(
+
+                                onClick = {
+
+                                    val currentUserId =
+                                        FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
+                                    val chatId =
+                                        if (currentUserId < task.clientId)
+                                            "${currentUserId}_${task.clientId}"
+                                        else
+                                            "${task.clientId}_${currentUserId}"
+
+                                    navController.navigate(
+                                        "$ROUT_CHAT/$chatId/${task.clientId}/${task.clientName}"
+                                    )
+                                },
+
+                                modifier = Modifier.fillMaxWidth(),
+
+                                shape = RoundedCornerShape(14.dp),
+
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = colorAccent
+                                )
+                            ) {
+
+                                Icon(
+                                    imageVector = Icons.Default.Email,
+                                    contentDescription = null,
+                                    tint = Color.White
+                                )
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                Text(
+                                    text = "Message Client",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                OutlinedButton(
+
+                                    onClick = {
+
+                                        navController.navigate(
+                                            "$ROUT_CLIENTPUBLICPROFILE/${task.clientId}"
+                                        )
+                                    },
+
+                                    modifier = Modifier.fillMaxWidth(),
+
+                                    shape = RoundedCornerShape(14.dp),
+
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = colorAccent
+                                    )
+                                ) {
+
+                                    Icon(
+                                        imageVector = Icons.Default.Person,
+                                        contentDescription = null
+                                    )
+
+                                    Spacer(modifier = Modifier.width(8.dp))
+
+                                    Text(
+                                        text = "View Client Profile",
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            /*
-            AVAILABLE JOBS
-             */
             item {
 
                 Text(
@@ -789,40 +912,78 @@ fun FundiHomeScreen(navController: NavHostController) {
                     shape = RoundedCornerShape(16.dp)
                 ) {
 
-                    Row(
-
-                        modifier = Modifier.padding(20.dp),
-
-                        verticalAlignment = Alignment.CenterVertically,
-
-                        horizontalArrangement =
-                            Arrangement.SpaceBetween
+                    Column(
+                        modifier = Modifier.padding(20.dp)
                     ) {
 
-                        Column(
-                            modifier = Modifier.weight(1f)
+                        Row(
+
+                            verticalAlignment = Alignment.CenterVertically,
+
+                            horizontalArrangement =
+                                Arrangement.SpaceBetween,
+
+                            modifier = Modifier.fillMaxWidth()
                         ) {
 
-                            Text(
-                                text = job.title,
-                                fontWeight = FontWeight.Bold,
-                                color = colorPrimary,
-                                fontSize = 16.sp
-                            )
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+
+                                Text(
+                                    text = job.title,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colorPrimary,
+                                    fontSize = 16.sp
+                                )
+
+                                Text(
+                                    text = job.location,
+                                    color = Color.Gray,
+                                    fontSize = 13.sp
+                                )
+                            }
 
                             Text(
-                                text = job.location,
-                                color = Color.Gray,
-                                fontSize = 13.sp
+                                text = job.budget,
+                                fontWeight = FontWeight.Black,
+                                color = colorAccent,
+                                fontSize = 16.sp
                             )
                         }
 
-                        Text(
-                            text = job.budget,
-                            fontWeight = FontWeight.Black,
-                            color = colorAccent,
-                            fontSize = 16.sp
-                        )
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        OutlinedButton(
+
+                            onClick = {
+
+                                navController.navigate(
+                                    "$ROUT_CLIENTPUBLICPROFILE/${job.clientId}"
+                                )
+                            },
+
+                            modifier = Modifier.fillMaxWidth(),
+
+                            shape = RoundedCornerShape(14.dp),
+
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = colorAccent
+                            )
+                        ) {
+
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Text(
+                                text = "View Client Profile",
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }

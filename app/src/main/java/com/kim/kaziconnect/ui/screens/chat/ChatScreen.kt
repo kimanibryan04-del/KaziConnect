@@ -1,4 +1,4 @@
-package com.kim.kaziconnect.ui.screens.messages
+package com.kim.kaziconnect.ui.screens.chat
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -72,82 +72,107 @@ fun ChatScreen(
     val coroutineScope = rememberCoroutineScope()
 
     /*
-    CHAT OPENED
+    RESET UNREAD COUNT
      */
     LaunchedEffect(chatId) {
 
-        /*
-        RESET UNREAD COUNT
-         */
         database.child("chats")
             .child(chatId)
             .child("unreadCount")
             .child(currentUserId)
             .setValue(0)
+    }
+
+    /*
+    REMOVE LISTENERS WHEN SCREEN CLOSES
+     */
+    DisposableEffect(chatId) {
 
         val messagesRef =
             database.child("messages")
                 .child(chatId)
 
-        val listener = object : ValueEventListener {
+        /*
+        SEEN LISTENER
+         */
+        val seenListener =
+            object : ValueEventListener {
 
-            override fun onDataChange(snapshot: DataSnapshot) {
+                override fun onDataChange(snapshot: DataSnapshot) {
 
-                messagesList.clear()
+                    snapshot.children.forEach { msgSnapshot ->
 
-                for (messageSnapshot in snapshot.children) {
+                        val msg =
+                            msgSnapshot.getValue(MessageModel::class.java)
 
-                    val message =
-                        messageSnapshot.getValue(MessageModel::class.java)
+                        if (
+                            msg != null &&
+                            msg.receiverId == currentUserId &&
+                            msg.senderId != currentUserId &&
+                            msg.seen == false
+                        ) {
 
-                    if (message != null) {
-
-                        messagesList.add(message)
+                            msgSnapshot.ref
+                                .child("seen")
+                                .setValue(true)
+                        }
                     }
                 }
 
-                /*
-                MARK ONLY LATEST RECEIVED MESSAGE AS SEEN
-                 */
-                val latestMessageSnapshot =
-                    snapshot.children.lastOrNull()
+                override fun onCancelled(error: DatabaseError) {
 
-                if (latestMessageSnapshot != null) {
-
-                    val latestMessage =
-                        latestMessageSnapshot
-                            .getValue(MessageModel::class.java)
-
-                    if (
-                        latestMessage != null &&
-                        latestMessage.receiverId == currentUserId &&
-                        latestMessage.senderId != currentUserId &&
-                        !latestMessage.seen
-                    ) {
-
-                        latestMessageSnapshot.ref
-                            .child("seen")
-                            .setValue(true)
-                    }
-                }
-
-                coroutineScope.launch {
-
-                    if (messagesList.isNotEmpty()) {
-
-                        listState.animateScrollToItem(
-                            messagesList.size - 1
-                        )
-                    }
                 }
             }
 
-            override fun onCancelled(error: DatabaseError) {
+        /*
+        UI LISTENER
+         */
+        val uiListener =
+            object : ValueEventListener {
 
+                override fun onDataChange(snapshot: DataSnapshot) {
+
+                    val newList =
+                        mutableListOf<MessageModel>()
+
+                    for (child in snapshot.children) {
+
+                        child.getValue(MessageModel::class.java)
+                            ?.let {
+                                newList.add(it)
+                            }
+                    }
+
+                    messagesList.clear()
+
+                    messagesList.addAll(newList)
+
+                    coroutineScope.launch {
+
+                        if (messagesList.isNotEmpty()) {
+
+                            listState.animateScrollToItem(
+                                messagesList.size - 1
+                            )
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
             }
+
+        messagesRef.addValueEventListener(seenListener)
+
+        messagesRef.addValueEventListener(uiListener)
+
+        onDispose {
+
+            messagesRef.removeEventListener(seenListener)
+
+            messagesRef.removeEventListener(uiListener)
         }
-
-        messagesRef.addValueEventListener(listener)
     }
 
     Scaffold(
@@ -254,10 +279,6 @@ fun ChatScreen(
                     }
                 }
         ) {
-
-            /*
-            BACKGROUND
-             */
 
             Canvas(
                 modifier = Modifier.fillMaxSize()
@@ -439,9 +460,6 @@ fun ChatScreen(
                                             lineHeight = 22.sp
                                         )
 
-                                        /*
-                                        MESSAGE STATUS
-                                         */
                                         if (isMe) {
 
                                             Text(
@@ -472,10 +490,6 @@ fun ChatScreen(
                         }
                     }
                 }
-
-                /*
-                MESSAGE INPUT
-                 */
 
                 Surface(
 
@@ -562,9 +576,6 @@ fun ChatScreen(
                                     .child(messageId)
                                     .setValue(message)
 
-                                /*
-                                UPDATE CHAT
-                                 */
                                 val chatData = mapOf(
 
                                     "chatId" to chatId,
@@ -579,9 +590,6 @@ fun ChatScreen(
                                     .child(chatId)
                                     .updateChildren(chatData)
 
-                                /*
-                                INCREMENT UNREAD COUNT
-                                 */
                                 database.child("chats")
                                     .child(chatId)
                                     .child("unreadCount")
@@ -592,13 +600,11 @@ fun ChatScreen(
                                             currentData: MutableData
                                         ): Transaction.Result {
 
-                                            var count =
+                                            val count =
                                                 currentData.getValue(Int::class.java)
                                                     ?: 0
 
-                                            count++
-
-                                            currentData.value = count
+                                            currentData.value = count + 1
 
                                             return Transaction.success(currentData)
                                         }

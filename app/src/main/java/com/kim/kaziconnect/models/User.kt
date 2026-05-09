@@ -19,5 +19,8 @@ data class User(
 
     var rating: Float = 0f,
     var reviewCount: Int = 0,
-    var earnings: Double = 0.0
+
+    var earnings: Double = 0.0,
+
+    var completedJobs: Int = 0
 )

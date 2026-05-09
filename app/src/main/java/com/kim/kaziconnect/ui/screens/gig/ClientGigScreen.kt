@@ -30,6 +30,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.kim.kaziconnect.models.JobModel
 import com.kim.kaziconnect.navigation.ROUT_APPLICANTSLIST
+import com.kim.kaziconnect.navigation.ROUT_CHAT
 import com.kim.kaziconnect.navigation.ROUT_CLIENTGIG
 import com.kim.kaziconnect.navigation.ROUT_CLIENTHOME
 import com.kim.kaziconnect.navigation.ROUT_CLIENTMESSAGES
@@ -37,6 +38,7 @@ import com.kim.kaziconnect.navigation.ROUT_CLIENTPROFILE
 import com.kim.kaziconnect.navigation.ROUT_JOBDETAILS_NOAPPLY
 import com.kim.kaziconnect.navigation.ROUT_POSTJOB
 import com.kim.kaziconnect.navigation.ROUT_REVIEW
+import com.kim.kaziconnect.navigation.ROUT_FUNDIPUBLICPROFILE
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,12 +70,8 @@ fun ClientGigScreen(navController: NavHostController) {
         mutableStateListOf<JobModel>()
     }
 
-    // =========================
-    // MESSAGE BADGE COUNT
-    // =========================
-
-    var unreadMessageCount by remember {
-        mutableIntStateOf(0)
+    var hasUnreadMessages by remember {
+        mutableStateOf(false)
     }
 
     val currentUserId =
@@ -82,29 +80,26 @@ fun ClientGigScreen(navController: NavHostController) {
     LaunchedEffect(Unit) {
 
         FirebaseDatabase.getInstance().reference
-            .child("chats")
+            .child("messages")
             .addValueEventListener(object : ValueEventListener {
 
                 override fun onDataChange(snapshot: DataSnapshot) {
 
-                    var count = 0
+                    hasUnreadMessages = snapshot.children.any { chatSnapshot ->
 
-                    for (chatSnapshot in snapshot.children) {
+                        chatSnapshot.children.any { messageSnapshot ->
 
-                        val receiverId =
-                            chatSnapshot.child("receiverId")
-                                .getValue(String::class.java) ?: ""
+                            val receiverId =
+                                messageSnapshot.child("receiverId")
+                                    .getValue(String::class.java) ?: ""
 
-                        val seen =
-                            chatSnapshot.child("seen")
-                                .getValue(Boolean::class.java) ?: false
+                            val seen =
+                                messageSnapshot.child("seen")
+                                    .getValue(Boolean::class.java) ?: false
 
-                        if (receiverId == currentUserId && !seen) {
-                            count++
+                            receiverId == currentUserId && !seen
                         }
                     }
-
-                    unreadMessageCount = count
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -340,10 +335,6 @@ fun ClientGigScreen(navController: NavHostController) {
                     )
                 )
 
-                // =========================
-                // UPDATED MESSAGES BUTTON
-                // =========================
-
                 NavigationBarItem(
 
                     icon = {
@@ -352,17 +343,11 @@ fun ClientGigScreen(navController: NavHostController) {
 
                             badge = {
 
-                                if (unreadMessageCount > 0) {
+                                if (hasUnreadMessages) {
 
                                     Badge(
                                         containerColor = colorAccent
-                                    ) {
-
-                                        Text(
-                                            text = unreadMessageCount.toString(),
-                                            color = Color.White
-                                        )
-                                    }
+                                    )
                                 }
                             }
                         ) {
@@ -442,12 +427,12 @@ fun ClientGigScreen(navController: NavHostController) {
 
                         val jobIcon = when (job.category) {
 
-                            "Plumbing" -> Icons.Default.Build
-                            "Electrical" -> Icons.Default.Bolt
-                            "Painting" -> Icons.Default.Brush
-                            "Masonry" -> Icons.Default.Tapas
-                            "Carpentry" -> Icons.Default.Hardware
-                            "Cleaning" -> Icons.Default.LocalLaundryService
+                            "Plumber" -> Icons.Default.Build
+                            "Electrician" -> Icons.Default.Bolt
+                            "Painter" -> Icons.Default.Brush
+                            "Mason" -> Icons.Default.Tapas
+                            "Carpenter" -> Icons.Default.Hardware
+                            "Cleaner" -> Icons.Default.LocalLaundryService
 
                             else -> Icons.Default.Work
                         }
@@ -516,9 +501,93 @@ fun ClientGigScreen(navController: NavHostController) {
                                     fontWeight = FontWeight.Black
                                 )
 
+                                /*
+                                MESSAGE BUTTON ONLY FOR ACTIVE TAB
+                                 */
+                                if (selectedTab == 0) {
+
+                                    Spacer(modifier = Modifier.height(14.dp))
+
+                                    Button(
+
+                                        onClick = {
+
+                                            val participants =
+                                                listOf(
+                                                    currentUserId,
+                                                    job.fundiId
+                                                ).sorted()
+
+                                            val chatId =
+                                                participants.joinToString("_")
+
+
+                                            navController.navigate(
+                                                "$ROUT_CHAT/$chatId/${job.fundiId}/${job.fundiName}"
+                                            )
+                                        },
+
+                                        modifier = Modifier.fillMaxWidth(),
+
+                                        shape = RoundedCornerShape(14.dp),
+
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = colorAccent
+                                        )
+                                    ) {
+
+                                        Icon(
+                                            imageVector = Icons.Default.Email,
+                                            contentDescription = null,
+                                            tint = Color.White
+                                        )
+
+                                        Spacer(modifier = Modifier.width(8.dp))
+
+                                        Text(
+                                            text = "Message Fundi",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+
                                 if (job.status == "completed") {
 
                                     Spacer(modifier = Modifier.height(14.dp))
+
+                                    OutlinedButton(
+
+                                        onClick = {
+
+                                            navController.navigate(
+                                                "$ROUT_FUNDIPUBLICPROFILE/${job.fundiId}"
+                                            )
+                                        },
+
+                                        modifier = Modifier.fillMaxWidth(),
+
+                                        shape = RoundedCornerShape(14.dp),
+
+                                        colors = ButtonDefaults.outlinedButtonColors(
+                                            contentColor = colorAccent
+                                        )
+                                    ) {
+
+                                        Icon(
+                                            imageVector = Icons.Default.Person,
+                                            contentDescription = null
+                                        )
+
+                                        Spacer(modifier = Modifier.width(8.dp))
+
+                                        Text(
+                                            text = "View Profile",
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(12.dp))
 
                                     if (!job.clientReviewed) {
 

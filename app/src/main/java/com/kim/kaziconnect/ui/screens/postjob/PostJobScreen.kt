@@ -26,6 +26,9 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.imePadding
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,12 +49,12 @@ fun PostJobScreen(
     var isLoading by remember { mutableStateOf(false) }
 
     val categories = listOf(
-        "Plumbing",
-        "Electrical",
-        "Masonry",
-        "Painting",
-        "Carpentry",
-        "Cleaning"
+        "Plumber",
+        "Electrician",
+        "Mason",
+        "Painter",
+        "Carpenter",
+        "Cleaner"
     )
 
     var selectedCategory by remember {
@@ -98,6 +101,8 @@ fun PostJobScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
                 .background(lightBg)
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
@@ -196,7 +201,6 @@ fun PostJobScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // TITLE
             OutlinedTextField(
                 value = title,
                 onValueChange = {
@@ -225,7 +229,6 @@ fun PostJobScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // DESCRIPTION
             OutlinedTextField(
                 value = description,
                 onValueChange = {
@@ -248,7 +251,6 @@ fun PostJobScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // LOCATION
             OutlinedTextField(
                 value = location,
                 onValueChange = {
@@ -277,7 +279,6 @@ fun PostJobScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // BUDGET
             OutlinedTextField(
                 value = budget,
                 onValueChange = {
@@ -314,36 +315,48 @@ fun PostJobScreen(
 
                     isLoading = true
 
-                    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                    val userId =
+                        FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
-                    val jobId = FirebaseDatabase.getInstance()
-                        .reference
-                        .child("jobs")
-                        .push()
-                        .key ?: ""
+                    val database =
+                        FirebaseDatabase.getInstance().reference
 
-                    val jobData = hashMapOf(
+                    database.child("users")
+                        .child(userId)
+                        .child("name")
+                        .get()
+                        .addOnSuccessListener { snapshot ->
 
-                        "id" to jobId,
-                        "title" to title,
-                        "description" to description,
-                        "location" to location,
-                        "budget" to budget,
-                        "clientId" to userId,
-                        "status" to "pending",
-                        "category" to selectedCategory
+                            val clientName =
+                                snapshot.getValue(String::class.java)
+                                    ?: "Client"
 
-                    )
+                            val jobId = database
+                                .child("jobs")
+                                .push()
+                                .key ?: ""
 
-                    FirebaseDatabase.getInstance()
-                        .reference
-                        .child("jobs")
-                        .child(jobId)
-                        .setValue(jobData)
-                        .addOnSuccessListener {
+                            val jobData = hashMapOf(
 
-                            isLoading = false
-                            navController.popBackStack()
+                                "id" to jobId,
+                                "title" to title,
+                                "description" to description,
+                                "location" to location,
+                                "budget" to budget,
+                                "clientId" to userId,
+                                "clientName" to clientName,
+                                "status" to "pending",
+                                "category" to selectedCategory
+                            )
+
+                            database.child("jobs")
+                                .child(jobId)
+                                .setValue(jobData)
+                                .addOnSuccessListener {
+
+                                    isLoading = false
+                                    navController.popBackStack()
+                                }
                         }
                 },
 
@@ -384,8 +397,9 @@ fun PostJobScreen(
 @Preview(showBackground = true)
 @Composable
 fun PostJobScreenPreview() {
+
     PostJobScreen(
         navController = rememberNavController(),
-        category = "Plumbing"
+        category = ""
     )
 }

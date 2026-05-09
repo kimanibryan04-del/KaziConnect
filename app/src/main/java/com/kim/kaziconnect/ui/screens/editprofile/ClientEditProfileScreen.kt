@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
@@ -35,6 +36,7 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import androidx.compose.foundation.layout.imePadding
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,6 +87,7 @@ fun ClientEditProfileScreen(navController: NavController) {
     ) { uri ->
 
         if (uri != null) {
+
             imageUri = uri
 
             // TEMPORARY UNTIL CLOUDINARY IS CONNECTED
@@ -120,9 +123,19 @@ fun ClientEditProfileScreen(navController: NavController) {
                     snapshot.child("bio")
                         .getValue(String::class.java) ?: ""
 
-                profileImage =
+                val imageFromDb =
                     snapshot.child("profileImage")
                         .getValue(String::class.java) ?: ""
+
+                profileImage =
+                    if (
+                        imageFromDb.isBlank() ||
+                        imageFromDb == "null"
+                    ) {
+                        ""
+                    } else {
+                        imageFromDb
+                    }
             }
     }
 
@@ -171,6 +184,7 @@ fun ClientEditProfileScreen(navController: NavController) {
                 .fillMaxSize()
                 .background(lightBg)
                 .padding(paddingValues)
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
 
@@ -179,49 +193,82 @@ fun ClientEditProfileScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // PROFILE IMAGE SECTION FIXED
-            Surface(
-                modifier = Modifier
-                    .size(120.dp)
-                    .clickable {
-                        launcher.launch("image/*")
-                    },
-
-                shape = CircleShape,
-
-                color =
-                    if (profileImage.isEmpty())
-                        Color(0xFFDDE2E9)
-                    else
-                        Color.Transparent
+            // PROFILE IMAGE SECTION
+            Box(
+                modifier = Modifier.size(120.dp),
+                contentAlignment = Alignment.BottomEnd
             ) {
 
-                if (profileImage.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape)
+                        .background(Color(0xFFDDE2E9))
+                        .clickable {
+                            launcher.launch("image/*")
+                        },
 
-                    Image(
-                        painter = rememberAsyncImagePainter(profileImage),
-                        contentDescription = null,
+                    contentAlignment = Alignment.Center
+                ) {
 
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape),
+                    val validImage = remember(profileImage) {
 
-                        contentScale = ContentScale.Crop
-                    )
+                        profileImage.isNotBlank() &&
+                                profileImage != "null" &&
+                                (
+                                        profileImage.startsWith("http") ||
+                                                profileImage.startsWith("content://")
+                                        )
+                    }
 
-                } else {
+                    if (validImage) {
 
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+                        Image(
+                            painter = rememberAsyncImagePainter(profileImage),
+                            contentDescription = null,
+
+                            modifier = Modifier.fillMaxSize(),
+
+                            contentScale = ContentScale.Crop
+                        )
+
+                    } else {
 
                         Icon(
                             imageVector = Icons.Default.Person,
                             contentDescription = null,
-                            tint = colorPrimary,
-                            modifier = Modifier.size(58.dp)
+                            tint = Color.DarkGray,
+                            modifier = Modifier.size(60.dp)
                         )
+                    }
+                }
+
+                if (profileImage.isNotBlank()) {
+
+                    Surface(
+                        modifier = Modifier.size(36.dp),
+                        shape = CircleShape,
+                        color = Color.White,
+                        shadowElevation = 4.dp
+                    ) {
+
+                        IconButton(
+
+                            onClick = {
+
+                                profileImage = ""
+                                imageUri = null
+                            }
+
+                        ) {
+
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Remove Photo",
+                                tint = Color.Red,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -255,6 +302,7 @@ fun ClientEditProfileScreen(navController: NavController) {
 
             OutlinedTextField(
                 value = fullName,
+
                 onValueChange = {
                     fullName = it
                 },
@@ -290,6 +338,7 @@ fun ClientEditProfileScreen(navController: NavController) {
 
             OutlinedTextField(
                 value = email,
+
                 onValueChange = {},
 
                 readOnly = true,
@@ -326,6 +375,7 @@ fun ClientEditProfileScreen(navController: NavController) {
 
             OutlinedTextField(
                 value = phone,
+
                 onValueChange = {
                     phone = it
                 },
@@ -361,6 +411,7 @@ fun ClientEditProfileScreen(navController: NavController) {
 
             OutlinedTextField(
                 value = location,
+
                 onValueChange = {
                     location = it
                 },
@@ -396,6 +447,7 @@ fun ClientEditProfileScreen(navController: NavController) {
 
             OutlinedTextField(
                 value = bio,
+
                 onValueChange = {
                     bio = it
                 },

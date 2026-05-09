@@ -20,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -31,11 +32,13 @@ import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.kim.kaziconnect.models.JobModel
+import com.kim.kaziconnect.navigation.ROUT_CHAT
 import com.kim.kaziconnect.navigation.ROUT_CLIENTGIG
 import com.kim.kaziconnect.navigation.ROUT_CLIENTHOME
 import com.kim.kaziconnect.navigation.ROUT_CLIENTMESSAGES
 import com.kim.kaziconnect.navigation.ROUT_CLIENTNOTIFICATION
 import com.kim.kaziconnect.navigation.ROUT_CLIENTPROFILE
+import com.kim.kaziconnect.navigation.ROUT_FUNDIPUBLICPROFILE
 import com.kim.kaziconnect.navigation.ROUT_JOBDETAILS_NOAPPLY
 import com.kim.kaziconnect.navigation.ROUT_POSTJOB
 import com.kim.kaziconnect.navigation.ROUT_REGISTER
@@ -55,12 +58,10 @@ fun ClientHomeScreen(navController: NavHostController) {
         mutableStateOf("")
     }
 
-    // MESSAGE DOT
     var hasUnreadMessages by remember {
         mutableStateOf(false)
     }
 
-    // NOTIFICATION COUNT
     var unreadCount by remember {
         mutableStateOf(0)
     }
@@ -72,7 +73,6 @@ fun ClientHomeScreen(navController: NavHostController) {
     val userId =
         auth.currentUser?.uid ?: ""
 
-    // NOTIFICATIONS
     LaunchedEffect(Unit) {
 
         database.child("notifications")
@@ -103,7 +103,6 @@ fun ClientHomeScreen(navController: NavHostController) {
             })
     }
 
-    // MESSAGE DOT LOGIC
     LaunchedEffect(Unit) {
 
         database.child("messages")
@@ -111,11 +110,9 @@ fun ClientHomeScreen(navController: NavHostController) {
 
                 override fun onDataChange(snapshot: DataSnapshot) {
 
-                    hasUnreadMessages = false
+                    hasUnreadMessages = snapshot.children.any { chatSnapshot ->
 
-                    for (chatSnapshot in snapshot.children) {
-
-                        for (messageSnapshot in chatSnapshot.children) {
+                        chatSnapshot.children.any { messageSnapshot ->
 
                             val receiverId =
                                 messageSnapshot.child("receiverId")
@@ -125,11 +122,7 @@ fun ClientHomeScreen(navController: NavHostController) {
                                 messageSnapshot.child("seen")
                                     .getValue(Boolean::class.java) ?: false
 
-                            if (receiverId == userId && !seen) {
-
-                                hasUnreadMessages = true
-                                break
-                            }
+                            receiverId == userId && !seen
                         }
                     }
                 }
@@ -140,7 +133,6 @@ fun ClientHomeScreen(navController: NavHostController) {
             })
     }
 
-    // ONGOING JOBS
     LaunchedEffect(Unit) {
 
         database.child("clientOngoingJobs")
@@ -282,7 +274,7 @@ fun ClientHomeScreen(navController: NavHostController) {
                                 if (hasUnreadMessages) {
 
                                     Badge(
-                                        containerColor = Color.Red
+                                        containerColor = colorAccent
                                     )
                                 }
                             }
@@ -482,12 +474,12 @@ fun ClientHomeScreen(navController: NavHostController) {
             Spacer(modifier = Modifier.height(16.dp))
 
             val services = listOf(
-                Triple("Plumbing", Default.Build, Color(0xFFE3F2FD)),
-                Triple("Electrical", Default.Bolt, Color(0xFFFFF3E0)),
-                Triple("Masonry", Default.Tapas, Color(0xFFE8F5E9)),
-                Triple("Painting", Default.Brush, Color(0xFFF3E5F5)),
-                Triple("Carpentry", Default.Hardware, Color(0xFFEFEBE9)),
-                Triple("Cleaning", Default.LocalLaundryService, Color(0xFFFFEBEE))
+                Triple("Plumber", Default.Build, Color(0xFFE3F2FD)),
+                Triple("Electrician", Default.Bolt, Color(0xFFFFF3E0)),
+                Triple("Mason", Default.Tapas, Color(0xFFE8F5E9)),
+                Triple("Painter", Default.Brush, Color(0xFFF3E5F5)),
+                Triple("Carpenter", Default.Hardware, Color(0xFFEFEBE9)),
+                Triple("Cleaner", Default.LocalLaundryService, Color(0xFFFFEBEE))
             )
 
             val filteredServices = services.filter {
@@ -577,12 +569,12 @@ fun ClientHomeScreen(navController: NavHostController) {
 
                     val jobIcon = when (job.category) {
 
-                        "Plumbing" -> Icons.Default.Build
-                        "Electrical" -> Icons.Default.Bolt
-                        "Painting" -> Icons.Default.Brush
-                        "Masonry" -> Icons.Default.Tapas
-                        "Carpentry" -> Icons.Default.Hardware
-                        "Cleaning" -> Icons.Default.LocalLaundryService
+                        "Plumber" -> Icons.Default.Build
+                        "Electrician" -> Icons.Default.Bolt
+                        "Painter" -> Icons.Default.Brush
+                        "Mason" -> Icons.Default.Tapas
+                        "Carpenter" -> Icons.Default.Hardware
+                        "Cleaner" -> Icons.Default.LocalLaundryService
 
                         else -> Icons.Default.Work
                     }
@@ -590,13 +582,7 @@ fun ClientHomeScreen(navController: NavHostController) {
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 12.dp)
-                            .clickable {
-
-                                navController.navigate(
-                                    "${ROUT_JOBDETAILS_NOAPPLY}/${job.id}"
-                                )
-                            },
+                            .padding(bottom = 12.dp),
 
                         colors = CardDefaults.cardColors(
                             containerColor = Color.White
@@ -609,37 +595,134 @@ fun ClientHomeScreen(navController: NavHostController) {
                             modifier = Modifier.padding(18.dp)
                         ) {
 
-                            Icon(
-                                imageVector = jobIcon,
-                                contentDescription = null,
-                                tint = colorAccent,
-                                modifier = Modifier.size(28.dp)
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
 
-                            Spacer(modifier = Modifier.height(10.dp))
+                                        navController.navigate(
+                                            "${ROUT_JOBDETAILS_NOAPPLY}/${job.id}"
+                                        )
+                                    }
+                            ) {
 
-                            Text(
-                                text = job.title,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 17.sp,
-                                color = colorPrimary
-                            )
+                                Column {
 
-                            Spacer(modifier = Modifier.height(6.dp))
+                                    Icon(
+                                        imageVector = jobIcon,
+                                        contentDescription = null,
+                                        tint = colorAccent,
+                                        modifier = Modifier.size(28.dp)
+                                    )
 
-                            Text(
-                                text = job.location,
-                                color = Color.Gray,
-                                fontSize = 13.sp
-                            )
+                                    Spacer(modifier = Modifier.height(10.dp))
 
-                            Spacer(modifier = Modifier.height(10.dp))
+                                    Text(
+                                        text = job.title,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 17.sp,
+                                        color = colorPrimary
+                                    )
 
-                            Text(
-                                text = job.budget,
-                                color = colorAccent,
-                                fontWeight = FontWeight.Bold
-                            )
+                                    Spacer(modifier = Modifier.height(6.dp))
+
+                                    Text(
+                                        text = job.location,
+                                        color = Color.Gray,
+                                        fontSize = 13.sp
+                                    )
+
+                                    Spacer(modifier = Modifier.height(10.dp))
+
+                                    Text(
+                                        text = job.budget,
+                                        color = colorAccent,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            OutlinedButton(
+
+                                onClick = {
+
+                                    navController.navigate(
+                                        "$ROUT_FUNDIPUBLICPROFILE/${job.fundiId}"
+                                    )
+                                },
+
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = colorAccent
+                                ),
+
+                                border = ButtonDefaults.outlinedButtonBorder.copy(
+                                    brush = SolidColor(colorAccent)
+                                )
+                            ) {
+
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null
+                                )
+
+                                Spacer(modifier = Modifier.width(6.dp))
+
+                                Text("View Profile")
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Button(
+
+                                onClick = {
+
+                                    val currentUserId =
+                                        FirebaseAuth.getInstance()
+                                            .currentUser?.uid ?: ""
+
+                                    val fundiId =
+                                        job.fundiId
+
+                                    val fundiName =
+                                        job.fundiName
+
+                                    val chatId =
+                                        if (currentUserId < fundiId) {
+                                            "${currentUserId}_${fundiId}"
+                                        } else {
+                                            "${fundiId}_${currentUserId}"
+                                        }
+
+                                    navController.navigate(
+                                        "${ROUT_CHAT}/$chatId/${job.fundiId}/${job.fundiName}"
+                                    )
+                                },
+
+                                modifier = Modifier.fillMaxWidth(),
+
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = colorAccent
+                                ),
+
+                                shape = RoundedCornerShape(14.dp)
+                            ) {
+
+                                Icon(
+                                    imageVector = Icons.Default.Email,
+                                    contentDescription = null,
+                                    tint = Color.White
+                                )
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                Text(
+                                    text = "Message Fundi",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }

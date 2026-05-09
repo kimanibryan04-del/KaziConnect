@@ -10,6 +10,9 @@ data class JobModel(
     var clientId: String = "",
     var status: String = "open",
     var category: String = "",
+    var fundiName: String = "",
+    var clientName: String = "",
+
 
     // ASSIGNED WORKER
     var fundiId: String = "",

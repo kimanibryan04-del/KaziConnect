@@ -14,7 +14,7 @@ import com.kim.kaziconnect.ui.screens.home.ClientHomeScreen
 import com.kim.kaziconnect.ui.screens.home.FundiHomeScreen
 import com.kim.kaziconnect.ui.screens.jobdetails.JobDetailsScreen
 import com.kim.kaziconnect.ui.screens.login.LoginScreen
-import com.kim.kaziconnect.ui.screens.messages.ChatScreen
+import com.kim.kaziconnect.ui.screens.chat.ChatScreen
 import com.kim.kaziconnect.ui.screens.messages.ClientMessagesScreen
 import com.kim.kaziconnect.ui.screens.messages.FundiMessagesScreen
 import com.kim.kaziconnect.ui.screens.notification.ClientNotificationScreen
@@ -28,7 +28,10 @@ import com.kim.kaziconnect.ui.screens.profile.FundiProfileScreen
 import com.kim.kaziconnect.ui.screens.profile.PaymentMethodsScreen
 import com.kim.kaziconnect.ui.screens.review.ReviewScreen
 import com.kim.kaziconnect.ui.screens.splash.SplashScreen
-import com.kim.kaziconnect.ui.screens.messages.ChatScreen
+import com.kim.kaziconnect.ui.screens.chat.ChatScreen
+import com.kim.kaziconnect.ui.screens.profile.FundiEditProfileScreen
+import com.kim.kaziconnect.ui.screens.publicprofile.ClientPublicProfileScreen
+import com.kim.kaziconnect.ui.screens.publicprofile.FundiPublicProfileScreen
 
 @Composable
 fun AppNavHost(
@@ -188,9 +191,40 @@ fun AppNavHost(
                 receiverName = receiverName
             )
         }
+        composable(ROUT_FUNDIEDITPROFILE) {
+            FundiEditProfileScreen(navController)
+        }
+        composable(
+            "$ROUT_FUNDIPUBLICPROFILE/{fundiId}"
+        ) { backStackEntry ->
 
+            val fundiId =
+                backStackEntry.arguments?.getString("fundiId") ?: ""
+
+            FundiPublicProfileScreen(
+                navController = navController,
+                fundiId = fundiId
+            )
+        }
+        composable(
+            route = "$ROUT_CLIENTPUBLICPROFILE/{clientId}"
+        ) { backStackEntry ->
+
+            val clientId =
+                backStackEntry.arguments
+                    ?.getString("clientId") ?: ""
+
+            ClientPublicProfileScreen(
+                navController = navController,
+                clientId = clientId
+            )
+
+
+        }
+        composable(ROUT_FORGOTPASSWORD) {
+            ForgotPasswordScreen(navController)
+        }
 
     }
-
 }
 

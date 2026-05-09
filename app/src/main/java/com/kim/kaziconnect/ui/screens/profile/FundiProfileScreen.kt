@@ -1,6 +1,7 @@
 package com.kim.kaziconnect.ui.screens.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -13,8 +14,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -22,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.kim.kaziconnect.navigation.ROUT_FUNDIHOME
@@ -29,6 +33,8 @@ import com.kim.kaziconnect.navigation.ROUT_FUNDIJOB
 import com.kim.kaziconnect.navigation.ROUT_FUNDIMESSAGES
 import com.kim.kaziconnect.navigation.ROUT_FUNDIPROFILE
 import com.kim.kaziconnect.navigation.ROUT_REGISTER
+import com.kim.kaziconnect.navigation.ROUT_FUNDIEDITPROFILE
+import com.kim.kaziconnect.navigation.ROUT_FUNDINOTIFICATION
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,6 +61,13 @@ fun FundiProfileScreen(navController: NavHostController) {
 
     var jobsDone by remember {
         mutableIntStateOf(0)
+    }
+
+    /*
+    PROFILE IMAGE
+     */
+    var profileImage by remember {
+        mutableStateOf("")
     }
 
     /*
@@ -85,6 +98,23 @@ fun FundiProfileScreen(navController: NavHostController) {
                     rating =
                         snapshot.child("rating")
                             .getValue(Double::class.java) ?: 0.0
+
+                    /*
+                    PROFILE IMAGE
+                     */
+                    val imageFromDb =
+                        snapshot.child("profileImage")
+                            .getValue(String::class.java) ?: ""
+
+                    profileImage =
+                        if (
+                            imageFromDb.isBlank() ||
+                            imageFromDb == "null"
+                        ) {
+                            ""
+                        } else {
+                            imageFromDb
+                        }
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -311,19 +341,41 @@ fun FundiProfileScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(30.dp))
 
-            Surface(
-                modifier = Modifier.size(100.dp),
-                shape = CircleShape,
-                color = Color.White,
-                shadowElevation = 2.dp
+            /*
+            PROFILE IMAGE
+             */
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFDDE2E9)),
+
+                contentAlignment = Alignment.Center
             ) {
 
-                Icon(
-                    Icons.Default.Person,
-                    contentDescription = null,
-                    modifier = Modifier.padding(20.dp),
-                    tint = Color.LightGray
-                )
+                if (
+                    profileImage.isNotBlank() &&
+                    profileImage != "null"
+                ) {
+
+                    AsyncImage(
+                        model = profileImage,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+
+                } else {
+
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(55.dp),
+                        tint = Color.Gray
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -336,7 +388,7 @@ fun FundiProfileScreen(navController: NavHostController) {
             )
 
             Text(
-                "$skill • Nairobi",
+                "$skill •",
                 fontSize = 14.sp,
                 color = Color.Gray
             )
@@ -380,6 +432,10 @@ fun FundiProfileScreen(navController: NavHostController) {
 
                 Card(
 
+                    modifier = Modifier.clickable {
+                        navController.navigate(ROUT_FUNDIEDITPROFILE)
+                    },
+
                     colors = CardDefaults.cardColors(
                         containerColor = Color.White
                     ),
@@ -394,49 +450,11 @@ fun FundiProfileScreen(navController: NavHostController) {
                         ProfileMenuOption(
                             "Personal Information",
                             Icons.Outlined.Badge,
-                            colorPrimary
-                        )
-
-                        ProfileMenuOption(
-                            "Payment Details",
-                            Icons.Outlined.Wallet,
                             colorPrimary,
-                            isLast = true
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                /*
-                WORK SETTINGS
-                 */
-                ProfileSectionHeader("Work Settings")
-
-                Card(
-
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    ),
-
-                    shape = RoundedCornerShape(16.dp),
-
-                    elevation = CardDefaults.cardElevation(0.5.dp)
-                ) {
-
-                    Column {
-
-                        ProfileMenuOption(
-                            "Edit Skills",
-                            Icons.Outlined.Build,
-                            colorPrimary
-                        )
-
-                        ProfileMenuOption(
-                            "Work Preferences",
-                            Icons.Outlined.Settings,
-                            colorPrimary,
-                            isLast = true
+                            isLast = true,
+                            onClick = {
+                                navController.navigate(ROUT_FUNDIEDITPROFILE)
+                            }
                         )
                     }
                 }
@@ -449,6 +467,10 @@ fun FundiProfileScreen(navController: NavHostController) {
                 ProfileSectionHeader("Preferences")
 
                 Card(
+
+                    modifier = Modifier.clickable {
+                        navController.navigate(ROUT_FUNDINOTIFICATION)
+                    },
 
                     colors = CardDefaults.cardColors(
                         containerColor = Color.White
@@ -464,42 +486,13 @@ fun FundiProfileScreen(navController: NavHostController) {
                         ProfileMenuOption(
                             "Notifications",
                             Icons.Outlined.Notifications,
-                            colorPrimary
-                        )
-
-                        ProfileMenuOption(
-                            "App Theme",
-                            Icons.Outlined.DarkMode,
                             colorPrimary,
-                            isLast = true
+                            isLast = true,
+                            onClick = {
+                                navController.navigate(ROUT_FUNDINOTIFICATION)
+                            }
                         )
                     }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                /*
-                SUPPORT
-                 */
-                ProfileSectionHeader("Support")
-
-                Card(
-
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    ),
-
-                    shape = RoundedCornerShape(16.dp),
-
-                    elevation = CardDefaults.cardElevation(0.5.dp)
-                ) {
-
-                    ProfileMenuOption(
-                        "Help Center",
-                        Icons.Outlined.HelpOutline,
-                        colorPrimary,
-                        isLast = true
-                    )
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -508,6 +501,16 @@ fun FundiProfileScreen(navController: NavHostController) {
                 LOGOUT
                  */
                 Card(
+
+                    modifier = Modifier.clickable {
+
+                        FirebaseAuth.getInstance().signOut()
+
+                        navController.navigate(ROUT_REGISTER) {
+
+                            popUpTo(0)
+                        }
+                    },
 
                     colors = CardDefaults.cardColors(
                         containerColor = Color.White
@@ -631,6 +634,9 @@ fun ProfileMenuOption(
 
             modifier = Modifier
                 .fillMaxWidth()
+                .clickable {
+                    onClick()
+                }
                 .padding(
                     horizontal = 16.dp,
                     vertical = 14.dp

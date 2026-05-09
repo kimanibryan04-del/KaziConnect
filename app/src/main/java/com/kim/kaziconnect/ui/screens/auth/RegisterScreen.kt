@@ -38,6 +38,9 @@ import com.kim.kaziconnect.R
 import com.kim.kaziconnect.navigation.ROUT_ROLESELECTION
 import com.google.firebase.auth.FirebaseAuth   // ✅ ADDED
 import android.widget.Toast
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.imePadding
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,6 +81,8 @@ fun RegisterScreen(navController: NavHostController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .imePadding()
+            .verticalScroll(rememberScrollState())
             .background(Brush.verticalGradient(listOf(topGradientColor, Color.White)))
             .padding(horizontal = 30.dp)
             .verticalScroll(scrollState),

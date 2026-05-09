@@ -28,6 +28,9 @@ import com.google.firebase.database.FirebaseDatabase
 import com.kim.kaziconnect.models.NotificationData
 import com.kim.kaziconnect.models.ReviewModel
 import com.kim.kaziconnect.models.User
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.imePadding
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -121,6 +124,8 @@ fun ReviewScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(paddingValues)
                 .background(lightBg)
                 .verticalScroll(rememberScrollState())
@@ -277,6 +282,7 @@ fun ReviewScreen(
 
                     // SAVE REVIEW
                     database.child("reviews")
+                        .child(receiverId)
                         .child(reviewId)
                         .setValue(review)
 
@@ -321,54 +327,20 @@ fun ReviewScreen(
                                             .child(receiverId)
                                             .child("reviewCount")
                                             .setValue(newReviewCount)
+
+                                        database.child("users")
+                                            .child(receiverId)
+                                            .child("completedJobs")
+                                            .setValue(newReviewCount)
                                     }
 
-                                    // ===================================
-                                    // FIX REVIEW STATUS + UPDATE FUNDI STATS
-                                    // ===================================
-
+                                    // CLIENT REVIEWED FUNDI
                                     if (reviewType == "client_to_fundi") {
 
-                                        // CLIENT REVIEWED FUNDI
                                         database.child("jobs")
                                             .child(jobId)
                                             .child("clientReviewed")
                                             .setValue(true)
-
-                                        // UPDATE FUNDI STATS RATING
-                                        database.child("fundiStats")
-                                            .child(receiverId)
-                                            .child("rating")
-                                            .setValue(newRating)
-
-                                        // UPDATE COMPLETED JOB COPIES
-                                        database.child("jobs")
-                                            .child(jobId)
-                                            .get()
-                                            .addOnSuccessListener { jobSnapshot ->
-
-                                                val fundiId =
-                                                    jobSnapshot.child("fundiId")
-                                                        .getValue(String::class.java) ?: ""
-
-                                                val clientId =
-                                                    jobSnapshot.child("clientId")
-                                                        .getValue(String::class.java) ?: ""
-
-                                                // UPDATE FUNDI SIDE
-                                                database.child("completedJobs")
-                                                    .child(fundiId)
-                                                    .child(jobId)
-                                                    .child("clientReviewed")
-                                                    .setValue(true)
-
-                                                // UPDATE CLIENT SIDE
-                                                database.child("completedJobs")
-                                                    .child(clientId)
-                                                    .child(jobId)
-                                                    .child("clientReviewed")
-                                                    .setValue(true)
-                                            }
 
                                     } else {
 
@@ -377,20 +349,40 @@ fun ReviewScreen(
                                             .child(jobId)
                                             .child("fundiReviewed")
                                             .setValue(true)
+                                    }
 
-                                        // UPDATE COMPLETED JOB COPIES
-                                        database.child("jobs")
-                                            .child(jobId)
-                                            .get()
-                                            .addOnSuccessListener { jobSnapshot ->
+                                    // UPDATE COMPLETED JOB COPIES
+                                    database.child("jobs")
+                                        .child(jobId)
+                                        .get()
 
-                                                val fundiId =
-                                                    jobSnapshot.child("fundiId")
-                                                        .getValue(String::class.java) ?: ""
+                                        .addOnSuccessListener { jobSnapshot ->
 
-                                                val clientId =
-                                                    jobSnapshot.child("clientId")
-                                                        .getValue(String::class.java) ?: ""
+                                            val fundiId =
+                                                jobSnapshot.child("fundiId")
+                                                    .getValue(String::class.java) ?: ""
+
+                                            val clientId =
+                                                jobSnapshot.child("clientId")
+                                                    .getValue(String::class.java) ?: ""
+
+                                            if (reviewType == "client_to_fundi") {
+
+                                                // UPDATE FUNDI SIDE
+                                                database.child("completedJobs")
+                                                    .child(fundiId)
+                                                    .child(jobId)
+                                                    .child("clientReviewed")
+                                                    .setValue(true)
+
+                                                // UPDATE CLIENT SIDE
+                                                database.child("clientCompletedJobs")
+                                                    .child(clientId)
+                                                    .child(jobId)
+                                                    .child("clientReviewed")
+                                                    .setValue(true)
+
+                                            } else {
 
                                                 // UPDATE FUNDI SIDE
                                                 database.child("completedJobs")
@@ -400,13 +392,13 @@ fun ReviewScreen(
                                                     .setValue(true)
 
                                                 // UPDATE CLIENT SIDE
-                                                database.child("completedJobs")
+                                                database.child("clientCompletedJobs")
                                                     .child(clientId)
                                                     .child(jobId)
                                                     .child("fundiReviewed")
                                                     .setValue(true)
                                             }
-                                    }
+                                        }
 
                                     // SEND NOTIFICATION
                                     val notificationId =

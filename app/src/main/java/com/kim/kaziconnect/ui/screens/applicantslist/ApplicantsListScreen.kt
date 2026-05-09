@@ -26,6 +26,7 @@ import com.google.firebase.database.*
 import com.kim.kaziconnect.models.JobModel
 import com.kim.kaziconnect.models.User
 import com.kim.kaziconnect.navigation.ROUT_CHAT
+import com.kim.kaziconnect.navigation.ROUT_FUNDIPUBLICPROFILE
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -227,17 +228,8 @@ fun ApplicantListScreen(
 
                                         onClick = {
 
-                                            val currentUserId =
-                                                FirebaseAuth.getInstance().currentUser?.uid ?: ""
-
-                                            val chatId =
-                                                if (currentUserId < applicant.uid)
-                                                    "${currentUserId}_${applicant.uid}"
-                                                else
-                                                    "${applicant.uid}_${currentUserId}"
-
                                             navController.navigate(
-                                                "$ROUT_CHAT/$chatId/${applicant.uid}/${applicant.name}"
+                                                "$ROUT_FUNDIPUBLICPROFILE/${applicant.uid}"
                                             )
 
                                         },
@@ -260,7 +252,7 @@ fun ApplicantListScreen(
 
                                         Spacer(modifier = Modifier.width(6.dp))
 
-                                        Text("Message")
+                                        Text("View Profile")
                                     }
 
                                     // ACCEPT BUTTON
@@ -284,6 +276,7 @@ fun ApplicantListScreen(
                                                         job.id = jobId
                                                         job.status = "active"
                                                         job.fundiId = applicant.uid
+                                                        job.fundiName = applicant.name
 
                                                         val clientId =
                                                             FirebaseAuth.getInstance()

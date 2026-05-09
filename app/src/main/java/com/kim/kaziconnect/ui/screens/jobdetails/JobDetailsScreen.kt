@@ -137,19 +137,19 @@ fun JobDetailsScreen(
     }
 
     // CATEGORY ICON
-    val categoryIcon = when (category) {
+    val categoryIcon = when(category.lowercase()) {
 
-        "Plumbing" -> Icons.Default.Build
+        "plumber" -> Icons.Default.Plumbing
 
-        "Electrical" -> Icons.Default.Bolt
+        "electrician" -> Icons.Default.ElectricalServices
 
-        "Masonry" -> Icons.Default.HomeRepairService
+        "painter" -> Icons.Default.FormatPaint
 
-        "Painting" -> Icons.Default.Brush
+        "carpenter" -> Icons.Default.Handyman
 
-        "Carpentry" -> Icons.Default.Handyman
+        "cleaner" -> Icons.Default.CleaningServices
 
-        "Cleaning" -> Icons.Default.CleaningServices
+        "mason" -> Icons.Default.Construction
 
         else -> Icons.Default.Work
     }
@@ -489,6 +489,27 @@ fun JobDetailsScreen(
                                                 .child(fundiId)
                                                 .child("earnings")
                                                 .setValue(newEarnings)
+
+                                            // UPDATE COMPLETED JOBS COUNT
+                                            database.child("fundiStats")
+                                                .child(fundiId)
+                                                .child("completedJobs")
+                                                .get()
+
+                                                .addOnSuccessListener { completedSnapshot ->
+
+                                                    val currentCompletedJobs =
+                                                        completedSnapshot.getValue(Int::class.java)
+                                                            ?: 0
+
+                                                    val updatedCompletedJobs =
+                                                        currentCompletedJobs + 1
+
+                                                    database.child("fundiStats")
+                                                        .child(fundiId)
+                                                        .child("completedJobs")
+                                                        .setValue(updatedCompletedJobs)
+                                                }
                                         }
 
                                     // NOTIFY CLIENT
@@ -551,6 +572,7 @@ fun JobDetailsScreen(
                     )
                 }
             }
+
             // COMPLETED STATE
             if (isCompleted) {
 

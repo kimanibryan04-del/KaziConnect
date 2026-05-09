@@ -95,9 +95,19 @@ fun ClientProfileScreen(navController: NavHostController) {
                         snapshot.child("rating")
                             .getValue(Double::class.java) ?: 0.0
 
-                    profileImage =
+                    val imageFromDb =
                         snapshot.child("profileImage")
                             .getValue(String::class.java) ?: ""
+
+                    profileImage =
+                        if (
+                            imageFromDb.isBlank() ||
+                            imageFromDb == "null"
+                        ) {
+                            ""
+                        } else {
+                            imageFromDb
+                        }
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -344,30 +354,42 @@ fun ClientProfileScreen(navController: NavHostController) {
 
                 Spacer(Modifier.height(30.dp))
 
-                if (profileImage.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFDDE2E9)),
+                    contentAlignment = Alignment.Center
+                ) {
 
-                    AsyncImage(
-                        model = profileImage,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
+                    val validImage = remember(profileImage) {
 
-                } else {
+                        profileImage.isNotBlank() &&
+                                profileImage != "null" &&
+                                (
+                                        profileImage.startsWith("http") ||
+                                                profileImage.startsWith("content://")
+                                        )
+                    }
 
-                    Surface(
-                        modifier = Modifier.size(120.dp),
-                        shape = CircleShape,
-                        color = Color(0xFFDDE2E9)
-                    ) {
+                    if (validImage) {
+
+                        AsyncImage(
+                            model = profileImage,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+
+                    } else {
 
                         Icon(
-                            Icons.Default.Person,
+                            imageVector = Icons.Default.Person,
                             contentDescription = null,
-                            modifier = Modifier.padding(25.dp),
-                            tint = colorPrimary
+                            tint = Color.DarkGray,
+                            modifier = Modifier.size(70.dp)
                         )
                     }
                 }
