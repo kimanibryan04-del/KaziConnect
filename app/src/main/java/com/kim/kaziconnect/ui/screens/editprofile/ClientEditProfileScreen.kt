@@ -480,7 +480,7 @@ fun ClientEditProfileScreen(navController: NavController) {
 
                     val updates = mapOf(
 
-                        "fullName" to fullName,
+                        "name" to fullName,
                         "phone" to phone,
                         "location" to location,
                         "bio" to bio,

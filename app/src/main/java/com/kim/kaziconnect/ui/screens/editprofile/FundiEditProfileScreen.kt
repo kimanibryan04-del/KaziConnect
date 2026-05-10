@@ -37,6 +37,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.material.icons.filled.Email
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,6 +53,10 @@ fun FundiEditProfileScreen(navController: NavController) {
         FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
     var fullName by remember {
+        mutableStateOf("")
+    }
+
+    var email by remember {
         mutableStateOf("")
     }
 
@@ -110,6 +115,10 @@ fun FundiEditProfileScreen(navController: NavController) {
 
                 fullName =
                     snapshot.child("fullName")
+                        .getValue(String::class.java) ?: ""
+
+                email =
+                    snapshot.child("email")
                         .getValue(String::class.java) ?: ""
 
                 phone =
@@ -342,6 +351,41 @@ fun FundiEditProfileScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(20.dp))
 
             OutlinedTextField(
+                value = email,
+
+                onValueChange = {},
+
+                readOnly = true,
+
+                label = {
+                    Text("Email")
+                },
+
+                leadingIcon = {
+
+                    Icon(
+                        imageVector = Icons.Default.Email,
+                        contentDescription = null,
+                        tint = colorAccent
+                    )
+                },
+
+                modifier = Modifier.fillMaxWidth(),
+
+                shape = RoundedCornerShape(18.dp),
+
+                singleLine = true,
+
+                enabled = false,
+
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledBorderColor = Color.LightGray,
+                    disabledContainerColor = Color.White,
+                    disabledTextColor = Color.Black
+                )
+            )
+
+            OutlinedTextField(
                 value = phone,
 
                 onValueChange = {
@@ -511,7 +555,7 @@ fun FundiEditProfileScreen(navController: NavController) {
 
                     val updates = mapOf(
 
-                        "fullName" to fullName,
+                        "name" to fullName,
                         "phone" to phone,
                         "location" to location,
                         "skill" to skill,

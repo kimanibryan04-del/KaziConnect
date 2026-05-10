@@ -487,39 +487,11 @@ fun FundiJobScreen(navController: NavHostController) {
 
                             onReviewClick = {
 
-                                val database =
-                                    FirebaseDatabase.getInstance().reference
+                                navController.navigate(
+                                    "${ROUT_REVIEW}/${job.id}/${job.clientId}/fundi_to_client"
+                                )
 
-                                database.child("users")
-                                    .child(userId)
-                                    .child("earnings")
-                                    .get()
 
-                                    .addOnSuccessListener { snapshot ->
-
-                                        val currentEarnings =
-                                            snapshot.getValue(Double::class.java)
-                                                ?: 0.0
-
-                                        val jobAmount =
-                                            job.budget
-                                                .replace("Ksh", "")
-                                                .replace(",", "")
-                                                .trim()
-                                                .toDoubleOrNull() ?: 0.0
-
-                                        val newEarnings =
-                                            currentEarnings + jobAmount
-
-                                        database.child("users")
-                                            .child(userId)
-                                            .child("earnings")
-                                            .setValue(newEarnings)
-
-                                        navController.navigate(
-                                            "${ROUT_REVIEW}/${job.id}/${job.clientId}/fundi_to_client"
-                                        )
-                                    }
                             }
                         )
                     }

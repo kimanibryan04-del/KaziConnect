@@ -28,8 +28,6 @@ import com.google.firebase.database.FirebaseDatabase
 import com.kim.kaziconnect.models.NotificationData
 import com.kim.kaziconnect.models.ReviewModel
 import com.kim.kaziconnect.models.User
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.imePadding
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -262,181 +260,196 @@ fun ReviewScreen(
                             .push()
                             .key ?: ""
 
-                    val review = ReviewModel(
+                    // GET REVIEWER NAME
+                    database.child("users")
+                        .child(currentUserId)
+                        .get()
 
-                        reviewId = reviewId,
+                        .addOnSuccessListener { reviewerSnapshot ->
 
-                        jobId = jobId,
+                            val reviewerName =
+                                reviewerSnapshot.child("name")
+                                    .getValue(String::class.java)
+                                    ?: "User"
 
-                        reviewerId = currentUserId,
+                            val review = ReviewModel(
 
-                        receiverId = receiverId,
+                                reviewId = reviewId,
 
-                        rating = rating,
+                                jobId = jobId,
 
-                        comment = comment,
+                                reviewerId = currentUserId,
 
-                        timestamp = System.currentTimeMillis()
-                    )
+                                reviewerName = reviewerName,
 
-                    // SAVE REVIEW
-                    database.child("reviews")
-                        .child(receiverId)
-                        .child(reviewId)
-                        .setValue(review)
+                                receiverId = receiverId,
 
-                        .addOnSuccessListener {
+                                rating = rating,
 
-                            // UPDATE USER RATING
-                            database.child("users")
+                                comment = comment,
+
+                                timestamp = System.currentTimeMillis()
+                            )
+
+                            // SAVE REVIEW
+                            database.child("reviews")
                                 .child(receiverId)
-                                .get()
+                                .child(reviewId)
+                                .setValue(review)
 
-                                .addOnSuccessListener { snapshot ->
+                                .addOnSuccessListener {
 
-                                    val user =
-                                        snapshot.getValue(User::class.java)
-
-                                    var newRating = rating
-
-                                    if (user != null) {
-
-                                        val currentRating =
-                                            user.rating
-
-                                        val currentReviewCount =
-                                            user.reviewCount
-
-                                        val newReviewCount =
-                                            currentReviewCount + 1
-
-                                        newRating =
-
-                                            (
-                                                    (currentRating * currentReviewCount)
-                                                            + rating
-                                                    ) / newReviewCount
-
-                                        database.child("users")
-                                            .child(receiverId)
-                                            .child("rating")
-                                            .setValue(newRating)
-
-                                        database.child("users")
-                                            .child(receiverId)
-                                            .child("reviewCount")
-                                            .setValue(newReviewCount)
-
-                                        database.child("users")
-                                            .child(receiverId)
-                                            .child("completedJobs")
-                                            .setValue(newReviewCount)
-                                    }
-
-                                    // CLIENT REVIEWED FUNDI
-                                    if (reviewType == "client_to_fundi") {
-
-                                        database.child("jobs")
-                                            .child(jobId)
-                                            .child("clientReviewed")
-                                            .setValue(true)
-
-                                    } else {
-
-                                        // FUNDI REVIEWED CLIENT
-                                        database.child("jobs")
-                                            .child(jobId)
-                                            .child("fundiReviewed")
-                                            .setValue(true)
-                                    }
-
-                                    // UPDATE COMPLETED JOB COPIES
-                                    database.child("jobs")
-                                        .child(jobId)
+                                    // UPDATE USER RATING
+                                    database.child("users")
+                                        .child(receiverId)
                                         .get()
 
-                                        .addOnSuccessListener { jobSnapshot ->
+                                        .addOnSuccessListener { snapshot ->
 
-                                            val fundiId =
-                                                jobSnapshot.child("fundiId")
-                                                    .getValue(String::class.java) ?: ""
+                                            val user =
+                                                snapshot.getValue(User::class.java)
 
-                                            val clientId =
-                                                jobSnapshot.child("clientId")
-                                                    .getValue(String::class.java) ?: ""
+                                            var newRating = rating
 
+                                            if (user != null) {
+
+                                                val currentRating =
+                                                    user.rating
+
+                                                val currentReviewCount =
+                                                    user.reviewCount
+
+                                                val newReviewCount =
+                                                    currentReviewCount + 1
+
+                                                newRating =
+
+                                                    (
+                                                            (currentRating * currentReviewCount)
+                                                                    + rating
+                                                            ) / newReviewCount
+
+                                                database.child("users")
+                                                    .child(receiverId)
+                                                    .child("rating")
+                                                    .setValue(newRating)
+
+                                                database.child("users")
+                                                    .child(receiverId)
+                                                    .child("reviewCount")
+                                                    .setValue(newReviewCount)
+
+                                                database.child("users")
+                                                    .child(receiverId)
+                                                    .child("completedJobs")
+                                                    .setValue(newReviewCount)
+                                            }
+
+                                            // CLIENT REVIEWED FUNDI
                                             if (reviewType == "client_to_fundi") {
 
-                                                // UPDATE FUNDI SIDE
-                                                database.child("completedJobs")
-                                                    .child(fundiId)
-                                                    .child(jobId)
-                                                    .child("clientReviewed")
-                                                    .setValue(true)
-
-                                                // UPDATE CLIENT SIDE
-                                                database.child("clientCompletedJobs")
-                                                    .child(clientId)
+                                                database.child("jobs")
                                                     .child(jobId)
                                                     .child("clientReviewed")
                                                     .setValue(true)
 
                                             } else {
 
-                                                // UPDATE FUNDI SIDE
-                                                database.child("completedJobs")
-                                                    .child(fundiId)
-                                                    .child(jobId)
-                                                    .child("fundiReviewed")
-                                                    .setValue(true)
-
-                                                // UPDATE CLIENT SIDE
-                                                database.child("clientCompletedJobs")
-                                                    .child(clientId)
+                                                // FUNDI REVIEWED CLIENT
+                                                database.child("jobs")
                                                     .child(jobId)
                                                     .child("fundiReviewed")
                                                     .setValue(true)
                                             }
+
+                                            // UPDATE COMPLETED JOB COPIES
+                                            database.child("jobs")
+                                                .child(jobId)
+                                                .get()
+
+                                                .addOnSuccessListener { jobSnapshot ->
+
+                                                    val fundiId =
+                                                        jobSnapshot.child("fundiId")
+                                                            .getValue(String::class.java) ?: ""
+
+                                                    val clientId =
+                                                        jobSnapshot.child("clientId")
+                                                            .getValue(String::class.java) ?: ""
+
+                                                    if (reviewType == "client_to_fundi") {
+
+                                                        // UPDATE FUNDI SIDE
+                                                        database.child("completedJobs")
+                                                            .child(fundiId)
+                                                            .child(jobId)
+                                                            .child("clientReviewed")
+                                                            .setValue(true)
+
+                                                        // UPDATE CLIENT SIDE
+                                                        database.child("clientCompletedJobs")
+                                                            .child(clientId)
+                                                            .child(jobId)
+                                                            .child("clientReviewed")
+                                                            .setValue(true)
+
+                                                    } else {
+
+                                                        // UPDATE FUNDI SIDE
+                                                        database.child("completedJobs")
+                                                            .child(fundiId)
+                                                            .child(jobId)
+                                                            .child("fundiReviewed")
+                                                            .setValue(true)
+
+                                                        // UPDATE CLIENT SIDE
+                                                        database.child("clientCompletedJobs")
+                                                            .child(clientId)
+                                                            .child(jobId)
+                                                            .child("fundiReviewed")
+                                                            .setValue(true)
+                                                    }
+                                                }
+
+                                            // SEND NOTIFICATION
+                                            val notificationId =
+                                                database.push().key ?: ""
+
+                                            val notification =
+                                                NotificationData(
+
+                                                    title = "New Review",
+
+                                                    message =
+                                                        "You received a ${rating.toInt()} star review.",
+
+                                                    timestamp =
+                                                        System.currentTimeMillis(),
+
+                                                    read = false,
+
+                                                    type = "review",
+
+                                                    jobId = jobId,
+
+                                                    senderId = currentUserId
+                                                )
+
+                                            database.child("notifications")
+                                                .child(receiverId)
+                                                .child(notificationId)
+                                                .setValue(notification)
+
+                                            isLoading = false
+
+                                            Toast.makeText(
+                                                context,
+                                                "Review submitted",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+
+                                            navController.popBackStack()
                                         }
-
-                                    // SEND NOTIFICATION
-                                    val notificationId =
-                                        database.push().key ?: ""
-
-                                    val notification =
-                                        NotificationData(
-
-                                            title = "New Review",
-
-                                            message =
-                                                "You received a ${rating.toInt()} star review.",
-
-                                            timestamp =
-                                                System.currentTimeMillis(),
-
-                                            read = false,
-
-                                            type = "review",
-
-                                            jobId = jobId,
-
-                                            senderId = currentUserId
-                                        )
-
-                                    database.child("notifications")
-                                        .child(receiverId)
-                                        .child(notificationId)
-                                        .setValue(notification)
-
-                                    isLoading = false
-
-                                    Toast.makeText(
-                                        context,
-                                        "Review submitted",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-
-                                    navController.popBackStack()
                                 }
                         }
                 },

@@ -154,7 +154,7 @@ fun FundiHomeScreen(navController: NavHostController) {
             FirebaseAuth.getInstance().currentUser?.uid
                 ?: return@LaunchedEffect
 
-        database.child("fundiStats")
+        database.child("users")
             .child(userId)
             .addValueEventListener(object : ValueEventListener {
 
@@ -162,12 +162,24 @@ fun FundiHomeScreen(navController: NavHostController) {
 
                     try {
 
-                        val data =
-                            snapshot.getValue(FundiStats::class.java)
+                        stats = FundiStats(
 
-                        if (data != null) {
-                            stats = data
-                        }
+                            earnings =
+                                snapshot.child("earnings")
+                                    .getValue(Double::class.java)
+                                    ?: 0.0,
+
+                            rating =
+                                snapshot.child("rating")
+                                    .getValue(Float::class.java)
+                                    ?.toDouble()
+                                    ?: 0.0,
+
+                            completedJobs =
+                                snapshot.child("completedJobs")
+                                    .getValue(Int::class.java)
+                                    ?: 0
+                        )
 
                     } catch (e: Exception) {
 
@@ -180,7 +192,6 @@ fun FundiHomeScreen(navController: NavHostController) {
                 }
             })
     }
-
     /*
     GET FUNDI SKILL
      */
@@ -275,9 +286,18 @@ fun FundiHomeScreen(navController: NavHostController) {
                                 /*
                                 IF NO SKILL -> SHOW ALL JOBS
                                  */
+                                val currentUserId =
+                                    FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
+                                /*
+                                IF NO SKILL -> SHOW ALL JOBS
+                                 */
                                 if (fundiSkill.isBlank()) {
 
-                                    availableJobs.add(job)
+                                    if (job.fundiId != currentUserId) {
+
+                                        availableJobs.add(job)
+                                    }
                                 }
 
                                 /*
@@ -291,7 +311,10 @@ fun FundiHomeScreen(navController: NavHostController) {
                                     )
                                 ) {
 
-                                    availableJobs.add(job)
+                                    if (job.fundiId != currentUserId) {
+
+                                        availableJobs.add(job)
+                                    }
                                 }
                             }
 
@@ -545,11 +568,6 @@ fun FundiHomeScreen(navController: NavHostController) {
                             color = colorPrimary
                         )
 
-                        Text(
-                            text = "Nairobi, Kenya",
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
                     }
 
                     Surface(
@@ -800,48 +818,51 @@ fun FundiHomeScreen(navController: NavHostController) {
 
                             Spacer(modifier = Modifier.height(14.dp))
 
-                            Button(
-
-                                onClick = {
-
-                                    val currentUserId =
-                                        FirebaseAuth.getInstance().currentUser?.uid ?: ""
-
-                                    val chatId =
-                                        if (currentUserId < task.clientId)
-                                            "${currentUserId}_${task.clientId}"
-                                        else
-                                            "${task.clientId}_${currentUserId}"
-
-                                    navController.navigate(
-                                        "$ROUT_CHAT/$chatId/${task.clientId}/${task.clientName}"
-                                    )
-                                },
-
-                                modifier = Modifier.fillMaxWidth(),
-
-                                shape = RoundedCornerShape(14.dp),
-
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = colorAccent
-                                )
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
 
-                                Icon(
-                                    imageVector = Icons.Default.Email,
-                                    contentDescription = null,
-                                    tint = Color.White
-                                )
+                                Button(
 
-                                Spacer(modifier = Modifier.width(8.dp))
+                                    onClick = {
 
-                                Text(
-                                    text = "Message Client",
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                        val currentUserId =
+                                            FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
-                                Spacer(modifier = Modifier.height(10.dp))
+                                        val chatId =
+                                            if (currentUserId < task.clientId)
+                                                "${currentUserId}_${task.clientId}"
+                                            else
+                                                "${task.clientId}_${currentUserId}"
+
+                                        navController.navigate(
+                                            "$ROUT_CHAT/$chatId/${task.clientId}/${task.clientName}"
+                                        )
+                                    },
+
+                                    modifier = Modifier.fillMaxWidth(),
+
+                                    shape = RoundedCornerShape(14.dp),
+
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = colorAccent
+                                    )
+                                ) {
+
+                                    Icon(
+                                        imageVector = Icons.Default.Email,
+                                        contentDescription = null,
+                                        tint = Color.White
+                                    )
+
+                                    Spacer(modifier = Modifier.width(8.dp))
+
+                                    Text(
+                                        text = "Message Client",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
 
                                 OutlinedButton(
 
@@ -891,98 +912,152 @@ fun FundiHomeScreen(navController: NavHostController) {
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            items(filteredJobs) { job ->
+            if (filteredJobs.isEmpty()) {
 
-                Card(
+                item {
 
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                        .clickable {
+                    Card(
 
-                            navController.navigate(
-                                "${ROUT_JOBDETAILS}/${job.id}"
-                            )
-                        },
+                        modifier = Modifier.fillMaxWidth(),
 
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    ),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White
+                        ),
 
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-
-                    Column(
-                        modifier = Modifier.padding(20.dp)
+                        shape = RoundedCornerShape(20.dp)
                     ) {
 
-                        Row(
+                        Column(
 
-                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(30.dp),
 
-                            horizontalArrangement =
-                                Arrangement.SpaceBetween,
-
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
-
-                                Text(
-                                    text = job.title,
-                                    fontWeight = FontWeight.Bold,
-                                    color = colorPrimary,
-                                    fontSize = 16.sp
-                                )
-
-                                Text(
-                                    text = job.location,
-                                    color = Color.Gray,
-                                    fontSize = 13.sp
-                                )
-                            }
-
-                            Text(
-                                text = job.budget,
-                                fontWeight = FontWeight.Black,
-                                color = colorAccent,
-                                fontSize = 16.sp
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        OutlinedButton(
-
-                            onClick = {
-
-                                navController.navigate(
-                                    "$ROUT_CLIENTPUBLICPROFILE/${job.clientId}"
-                                )
-                            },
-
-                            modifier = Modifier.fillMaxWidth(),
-
-                            shape = RoundedCornerShape(14.dp),
-
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = colorAccent
-                            )
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
 
                             Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = null
+                                imageVector = Icons.Default.WorkOff,
+                                contentDescription = null,
+                                tint = Color.Gray,
+                                modifier = Modifier.size(60.dp)
                             )
 
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
 
                             Text(
-                                text = "View Client Profile",
+                                text = "No jobs yet",
+                                color = Color.Gray,
+                                fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
                             )
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            Text(
+                                text = "Jobs posted by clients will appear here",
+                                color = Color.LightGray,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+
+            } else {
+
+                items(filteredJobs) { job ->
+
+                    Card(
+
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .clickable {
+
+                                navController.navigate(
+                                    "${ROUT_JOBDETAILS}/${job.id}"
+                                )
+                            },
+
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White
+                        ),
+
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+
+                        Column(
+                            modifier = Modifier.padding(20.dp)
+                        ) {
+
+                            Row(
+
+                                verticalAlignment = Alignment.CenterVertically,
+
+                                horizontalArrangement =
+                                    Arrangement.SpaceBetween,
+
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ) {
+
+                                    Text(
+                                        text = job.title,
+                                        fontWeight = FontWeight.Bold,
+                                        color = colorPrimary,
+                                        fontSize = 16.sp
+                                    )
+
+                                    Text(
+                                        text = job.location,
+                                        color = Color.Gray,
+                                        fontSize = 13.sp
+                                    )
+                                }
+
+                                Text(
+                                    text = job.budget,
+                                    fontWeight = FontWeight.Black,
+                                    color = colorAccent,
+                                    fontSize = 16.sp
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            OutlinedButton(
+
+                                onClick = {
+
+                                    navController.navigate(
+                                        "$ROUT_CLIENTPUBLICPROFILE/${job.clientId}"
+                                    )
+                                },
+
+                                modifier = Modifier.fillMaxWidth(),
+
+                                shape = RoundedCornerShape(14.dp),
+
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = colorAccent
+                                )
+                            ) {
+
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null
+                                )
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                Text(
+                                    text = "View Client Profile",
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }

@@ -27,6 +27,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.database.*
 import com.kim.kaziconnect.models.ReviewModel
+import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +44,9 @@ fun FundiPublicProfileScreen(
     var skill by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
+    var profileImage by remember {
+        mutableStateOf("")
+    }
 
     var rating by remember { mutableStateOf(0.0) }
     var earnings by remember { mutableStateOf(0.0) }
@@ -84,6 +88,11 @@ fun FundiPublicProfileScreen(
                         snapshot.child("phone")
                             .getValue(String::class.java)
                             ?: "No Phone"
+
+                    profileImage =
+                        snapshot.child("profileImage")
+                            .getValue(String::class.java)
+                            ?: ""
 
                     rating =
                         snapshot.child("rating")
@@ -232,12 +241,27 @@ fun FundiPublicProfileScreen(
                             contentAlignment = Alignment.Center
                         ) {
 
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = null,
-                                tint = colorAccent,
-                                modifier = Modifier.size(50.dp)
-                            )
+                            if (
+                                profileImage.isNotBlank() &&
+                                profileImage != "null"
+                            ) {
+
+                                AsyncImage(
+                                    model = profileImage,
+                                    contentDescription = null,
+
+                                    modifier = Modifier.fillMaxSize()
+                                )
+
+                            } else {
+
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = colorAccent,
+                                    modifier = Modifier.size(50.dp)
+                                )
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -420,7 +444,7 @@ fun FundiPublicProfileScreen(
                                 Spacer(modifier = Modifier.width(8.dp))
 
                                 Text(
-                                    text = "${review.rating}/5",
+                                    text = String.format("%.1f", review.rating),
                                     fontWeight = FontWeight.Bold,
                                     color = colorPrimary
                                 )
@@ -441,9 +465,15 @@ fun FundiPublicProfileScreen(
                             Spacer(modifier = Modifier.height(12.dp))
 
                             Text(
-                                text = "Anonymous Client",
+                                text =
+                                    if (review.reviewerName.isNotBlank())
+                                        review.reviewerName
+                                    else
+                                        "Anonymous Client",
+
                                 color = Color.Gray,
-                                fontSize = 12.sp
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
                     }

@@ -509,6 +509,11 @@ fun JobDetailsScreen(
                                                         .child(fundiId)
                                                         .child("completedJobs")
                                                         .setValue(updatedCompletedJobs)
+
+                                                    database.child("users")
+                                                        .child(fundiId)
+                                                        .child("completedJobs")
+                                                        .setValue(updatedCompletedJobs)
                                                 }
                                         }
 

@@ -47,7 +47,7 @@ fun FundiProfileScreen(navController: NavHostController) {
     val userId =
         FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
-    var fullName by remember {
+    var name by remember {
         mutableStateOf("")
     }
 
@@ -86,9 +86,8 @@ fun FundiProfileScreen(navController: NavHostController) {
 
                 override fun onDataChange(snapshot: DataSnapshot) {
 
-                    fullName =
-                        snapshot.child("fullName")
-                            .getValue(String::class.java) ?: ""
+                    name = snapshot.child("name")
+                        .getValue(String::class.java) ?: ""
 
                     skill =
                         snapshot.child("skill")
@@ -381,9 +380,9 @@ fun FundiProfileScreen(navController: NavHostController) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                fullName,
+                name,
                 fontSize = 24.sp,
-                fontWeight = FontWeight.Black,
+                fontWeight = FontWeight.Bold,
                 color = colorPrimary
             )
 

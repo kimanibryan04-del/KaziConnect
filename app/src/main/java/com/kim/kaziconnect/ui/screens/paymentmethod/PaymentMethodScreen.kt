@@ -109,6 +109,7 @@ fun PaymentMethodsScreen(navController: NavController) {
 
             modifier = Modifier
                 .fillMaxSize()
+                .imePadding()
                 .background(lightBg)
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())

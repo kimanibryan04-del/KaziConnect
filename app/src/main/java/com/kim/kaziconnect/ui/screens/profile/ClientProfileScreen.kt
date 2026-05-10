@@ -46,7 +46,7 @@ fun ClientProfileScreen(navController: NavHostController) {
     val userId =
         FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
-    var fullName by remember {
+    var name by remember {
         mutableStateOf("")
     }
 
@@ -82,14 +82,13 @@ fun ClientProfileScreen(navController: NavHostController) {
 
                 override fun onDataChange(snapshot: DataSnapshot) {
 
-                    fullName =
-                        snapshot.child("fullName")
-                            .getValue(String::class.java) ?: ""
+                    name = snapshot.child("name")
+                        .getValue(String::class.java) ?: ""
 
                     location =
                         snapshot.child("location")
                             .getValue(String::class.java)
-                            ?: "Nairobi, Kenya"
+                            ?: ""
 
                     rating =
                         snapshot.child("rating")
@@ -397,7 +396,7 @@ fun ClientProfileScreen(navController: NavHostController) {
                 Spacer(Modifier.height(16.dp))
 
                 Text(
-                    fullName,
+                    name,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = colorPrimary
