@@ -82,7 +82,6 @@ fun RegisterScreen(navController: NavHostController) {
         modifier = Modifier
             .fillMaxSize()
             .imePadding()
-            .verticalScroll(rememberScrollState())
             .background(Brush.verticalGradient(listOf(topGradientColor, Color.White)))
             .padding(horizontal = 30.dp)
             .verticalScroll(scrollState),

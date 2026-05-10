@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.kim.kaziconnect.ui.screens.applicants.ApplicantListScreen
+import com.kim.kaziconnect.ui.screens.auth.ForgotPasswordScreen
 import com.kim.kaziconnect.ui.screens.gig.ClientGigScreen
 import com.kim.kaziconnect.ui.screens.gig.FundiJobScreen
 import com.kim.kaziconnect.ui.screens.home.ClientHomeScreen

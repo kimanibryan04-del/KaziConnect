@@ -128,7 +128,6 @@ fun ReviewScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(paddingValues)
                 .background(lightBg)
-                .verticalScroll(rememberScrollState())
                 .padding(20.dp),
 
             horizontalAlignment = Alignment.CenterHorizontally

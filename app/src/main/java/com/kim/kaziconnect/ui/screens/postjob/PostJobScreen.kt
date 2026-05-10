@@ -105,7 +105,6 @@ fun PostJobScreen(
                 .verticalScroll(rememberScrollState())
                 .background(lightBg)
                 .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
 

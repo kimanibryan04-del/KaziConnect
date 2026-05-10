@@ -75,22 +75,24 @@ fun LoginScreen(navController: NavHostController) {
 
     Column(
         modifier = Modifier
+
             .fillMaxSize()
-            .imePadding()
-            .verticalScroll(rememberScrollState())
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(topGradientColor, Color.White)
                 )
             )
+            .imePadding()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 30.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.fillMaxHeight(0.10f))
+
+        Spacer(modifier = Modifier.height(60.dp))
 
         Box(
             modifier = Modifier
-                .size(160.dp)
+                .size(140.dp)
                 .clip(CircleShape)
                 .background(Color.White)
                 .border(3.dp, colorAccent, CircleShape),
@@ -199,7 +201,6 @@ fun LoginScreen(navController: NavHostController) {
         TextButton(
             onClick = {
                 navController.navigate(ROUT_FORGOTPASSWORD)
-
             },
             modifier = Modifier.align(Alignment.End),
             contentPadding = PaddingValues(0.dp)
